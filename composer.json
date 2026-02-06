@@ -16,7 +16,9 @@
 		"laravel/socialite": "^5.6",
 		"laravel/tinker": "^2.7",
 		"livewire/livewire": "^3.5",
+		"setasign/fpdi-tcpdf": "2.3",
 		"spatie/laravel-permission": "^6.7",
+		"spatie/pdf-to-image": "^1.2",
 		"yajra/laravel-datatables": "^11.0"
 	},
 	"require-dev": {

@@ -66,4 +66,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->addresses?->first();
     }
+
+    public function supportTickets()
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->role === 'Customer' || $this->hasRole('Customer');
+    }
 }

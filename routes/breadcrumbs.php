@@ -88,12 +88,6 @@ Breadcrumbs::for('catalog.pdfs.show', function (BreadcrumbTrail $trail, $pdf) {
     $trail->push($pdf->title ?? 'Untitled PDF', route('catalog.pdfs.show', $pdf));
 });
 
-// Home > Dashboard > Catalog PDFs > [PDF] > live preview
-Breadcrumbs::for('catalog.pdfs.slicer.preview', function (BreadcrumbTrail $trail, $pdf) {
-    $trail->parent('catalog.pdfs.show', $pdf);
-    $trail->push('Preview', route('catalog.pdfs.slicer.preview', $pdf));
-});
-
 // Home > Dashboard > Catalog PDFs > [PDF] > live view
 Breadcrumbs::for('catalog.pdfs.slicer.live', function (BreadcrumbTrail $trail, $pdf) {
     $trail->parent('catalog.pdfs.show', $pdf);
@@ -111,4 +105,22 @@ Breadcrumbs::for('catalog.pdfs.page-management', function (BreadcrumbTrail $trai
 Breadcrumbs::for('catalog.pdfs.flip-physics.preview', function (BreadcrumbTrail $trail, $pdf) {
     $trail->parent('catalog.pdfs.show', $pdf);
     $trail->push('Flip Physics Preview', route('catalog.pdfs.flip-physics.preview', $pdf));
+});
+
+// Home > Dashboard > Catalog PDFs > [PDF] > Slicer Share
+Breadcrumbs::for('catalog.pdfs.flip-physics.share', function (BreadcrumbTrail $trail, $pdf) {
+    $trail->parent('catalog.pdfs.show', $pdf);
+    $trail->push('Flip Physics Share', route('catalog.pdfs.flip-physics.share', $pdf));
+});
+
+// Home > Dashboard > Catalog PDFs > [PDF] > Slicer Editor
+Breadcrumbs::for('catalog.pdfs.slicer.edit', function (BreadcrumbTrail $trail, $pdf) {
+    $trail->parent('catalog.pdfs.show', $pdf);
+    $trail->push('Slicer (Shoppable) Editor', route('catalog.pdfs.slicer.edit', $pdf));
+});
+
+// Home > Dashboard > Catalog PDFs > [PDF] > Slicer Preview
+Breadcrumbs::for('catalog.pdfs.slicer.preview', function (BreadcrumbTrail $trail, $pdf) {
+    $trail->parent('catalog.pdfs.show', $pdf);
+    $trail->push('Slicer (Shoppable) Preview', route('catalog.pdfs.slicer.preview', $pdf));
 });

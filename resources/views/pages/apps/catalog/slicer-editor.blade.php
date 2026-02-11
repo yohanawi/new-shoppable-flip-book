@@ -1,7 +1,11 @@
 <x-default-layout>
 
     @section('title')
-        Slicer Editor
+        Slicer (Shoppable) Editor - {{ $pdf->title }}
+    @endsection
+
+    @section('breadcrumbs')
+        {{ Breadcrumbs::render('catalog.pdfs.slicer.edit', $pdf) }}
     @endsection
 
     <style>
@@ -28,14 +32,39 @@
         .hotspot-list .list-group-item {
             cursor: pointer;
         }
+
+        #thumbnailPreview {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid var(--bs-gray-300);
+            border-radius: 0.475rem;
+            overflow: hidden;
+        }
+
+        #thumbnailPreview img,
+        #thumbnailPreview canvas {
+            width: 100%;
+            display: block;
+        }
+
+        .thumbnail-hotspot {
+            position: absolute;
+            border: 2px solid rgba(var(--bs-primary-rgb), 0.85);
+            background: rgba(var(--bs-primary-rgb), 0.15);
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        .thumbnail-hotspot.active {
+            border-color: rgba(var(--bs-success-rgb), 1);
+            background: rgba(var(--bs-success-rgb), 0.2);
+        }
     </style>
 
     <div class="d-flex flex-wrap flex-stack mb-6">
-        <div>
-            <h3 class="fw-bold my-2">Slicer (Shoppable) Editor</h3>
-            <div class="text-muted">{{ $pdf->title }}</div>
-        </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 ms-auto">
             <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light btn-active-light-primary">Back</a>
             <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}" class="btn btn-light-primary">Shoppable Preview</a>
             <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
@@ -109,6 +138,21 @@
                             <canvas id="slicerCanvas"></canvas>
                         </div>
                         <div class="text-muted mt-3">Draw a hotspot area on the page, then fill the details and save.
+                        </div>
+
+                        <!-- Thumbnail Preview -->
+                        <div class="mt-5">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0">Thumbnail Preview</h5>
+                                <button type="button" class="btn btn-sm btn-light" id="btnRefreshPreview">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                            </div>
+                            <div id="thumbnailPreview">
+                                <canvas id="thumbnailCanvas"></canvas>
+                                <div id="thumbnailHotspots"></div>
+                            </div>
+                            <div class="text-muted mt-2 small">Shows all hotspots on this page with borders</div>
                         </div>
                     @endif
                 </div>
@@ -500,6 +544,90 @@
                     }
                 }
 
+                async function renderThumbnailPreview() {
+                    const thumbnailCanvas = document.getElementById('thumbnailCanvas');
+                    const thumbnailHotspots = document.getElementById('thumbnailHotspots');
+                    if (!thumbnailCanvas || !thumbnailHotspots) return;
+
+                    const pid = currentPageId();
+                    if (!pid) return;
+
+                    const ctx = thumbnailCanvas.getContext('2d');
+
+                    // Load page image
+                    const p = pages.find(x => String(x.id) === String(pid));
+                    let imgUrl;
+                    if (p && p.image_path) {
+                        imgUrl = pageImageUrl(pid);
+                    } else {
+                        // Render from PDF
+                        const pdf = await ensurePdfLoaded();
+                        const page = await pdf.getPage(currentPageNumber());
+                        const viewport = page.getViewport({
+                            scale: 1
+                        });
+                        const maxWidth = 400;
+                        const scale = maxWidth / viewport.width;
+                        const scaledViewport = page.getViewport({
+                            scale
+                        });
+
+                        thumbnailCanvas.width = scaledViewport.width;
+                        thumbnailCanvas.height = scaledViewport.height;
+
+                        await page.render({
+                            canvasContext: ctx,
+                            viewport: scaledViewport
+                        }).promise;
+                    }
+
+                    // If image exists, load it instead
+                    if (imgUrl) {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        await new Promise((resolve) => {
+                            img.onload = () => {
+                                const maxWidth = 400;
+                                const scale = maxWidth / img.width;
+                                thumbnailCanvas.width = Math.floor(img.width * scale);
+                                thumbnailCanvas.height = Math.floor(img.height * scale);
+                                ctx.drawImage(img, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
+                                resolve();
+                            };
+                            img.src = imgUrl;
+                        });
+                    }
+
+                    // Fetch hotspots
+                    const url = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/pages')) + '/' + pid + '/hotspots';
+                    const res = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const json = await res.json();
+                    const hotspots = json.data || [];
+
+                    // Clear existing hotspot overlays
+                    thumbnailHotspots.innerHTML = '';
+
+                    // Create hotspot overlays
+                    for (const h of hotspots) {
+                        const div = document.createElement('div');
+                        div.className = 'thumbnail-hotspot';
+                        if (h.is_active) div.classList.add('active');
+
+                        // Position using percentage values (x, y, w, h are normalized 0-1)
+                        div.style.left = (h.x * 100) + '%';
+                        div.style.top = (h.y * 100) + '%';
+                        div.style.width = (h.w * 100) + '%';
+                        div.style.height = (h.h * 100) + '%';
+
+                        div.title = h.title || h.action_type;
+                        thumbnailHotspots.appendChild(div);
+                    }
+                }
+
                 function scaleObjectData(objData, scaleX, scaleY) {
                     const data = JSON.parse(JSON.stringify(objData));
                     if (typeof data.left === 'number') data.left = data.left * scaleX;
@@ -753,6 +881,7 @@
                     setStatus('');
                     await loadBackgroundForPage();
                     await loadHotspots();
+                    await renderThumbnailPreview();
                 }
 
                 function resetFormForNew() {
@@ -806,6 +935,7 @@
                 document.getElementById('btnDeleteSelected')?.addEventListener('click', deleteSelected);
                 document.getElementById('btnNew')?.addEventListener('click', resetFormForNew);
                 document.getElementById('btnInitPages')?.addEventListener('click', initPagesClientSide);
+                document.getElementById('btnRefreshPreview')?.addEventListener('click', renderThumbnailPreview);
 
                 formEl?.addEventListener('submit', function(e) {
                     e.preventDefault();

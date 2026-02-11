@@ -114,6 +114,46 @@
                 padding: 12px !important;
             }
         }
+
+        /* Ensure modals appear above everything */
+        .modal {
+            z-index: 10000 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 9999 !important;
+        }
+
+        /* Modal Button Hover Effects */
+        .btn-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            color: white;
+        }
+
+        .modal-content {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 
     <!--begin::Live Flipbook Card-->
@@ -206,34 +246,34 @@
 
     <!--begin::Product Modal-->
     <div class="modal fade" id="modalProduct" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered mw-650px">
-            <div class="modal-content shadow-lg" style="border-radius: 16px;">
-                <!--begin::Modal header-->
-                <div class="modal-header border-0 pb-0">
-                    <h2 class="fw-bold">Product Details</h2>
-                    <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
-                        <i class="ki-outline ki-cross fs-1"></i>
+        <div class="modal-dialog modal-dialog-centered mw-700px">
+            <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden;">
+                <!--begin::Gradient Header-->
+                <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px;">
+                    <h2 class="fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Product Details</h2>
+                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.2); border-radius: 8px;">
+                        <i class="ki-outline ki-cross fs-1 text-white"></i>
                     </div>
                 </div>
-                <!--end::Modal header-->
+                <!--end::Gradient Header-->
 
                 <!--begin::Modal body-->
-                <div class="modal-body pt-5 pb-8 px-10">
-                    <div class="d-flex align-items-start gap-5">
-                        <!--begin::Image-->
-                        <div class="symbol symbol-100px symbol-lg-150px flex-shrink-0" id="modalProductThumbWrapper"
-                            style="display:none;">
-                            <img id="modalProductThumb" src="" alt="" class="symbol-label"
-                                style="border-radius: 12px;">
+                <div class="modal-body pt-6 pb-8 px-10">
+                    <div class="d-flex align-items-start gap-5 flex-column flex-md-row">
+                        <!--begin::Image with Frame-->
+                        <div class="flex-shrink-0 position-relative" id="modalProductThumbWrapper" style="display:none;">
+                            <div style="width: 180px; height: 180px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 16px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
+                                <img id="modalProductThumb" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                            </div>
                         </div>
-                        <!--end::Image-->
+                        <!--end::Image with Frame-->
 
                         <!--begin::Info-->
                         <div class="flex-grow-1">
-                            <div class="fs-3 fw-bold text-gray-900 mb-3" id="modalProductName"></div>
-                            <div class="fs-6 text-gray-600 mb-5" id="modalProductDesc"></div>
-                            <div class="d-flex align-items-center">
-                                <span class="fs-2x fw-bold text-primary" id="modalProductPrice"></span>
+                            <div class="fs-2 fw-bold mb-3" id="modalProductName" style="color: #2d3748; line-height: 1.3;"></div>
+                            <div class="fs-6 mb-5" id="modalProductDesc" style="color: #718096; line-height: 1.6;"></div>
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1.5rem; padding: 10px 20px; border-radius: 10px; font-weight: 700;" id="modalProductPrice"></div>
                             </div>
                         </div>
                         <!--end::Info-->
@@ -241,19 +281,17 @@
                 </div>
                 <!--end::Modal body-->
 
-                <!--begin::Modal footer-->
-                <div class="modal-footer border-0 pt-0 justify-content-center pb-8">
-                    <a href="#" target="_blank" class="btn btn-primary btn-lg px-10 fw-bold" id="modalProductLink"
-                        style="border-radius: 10px;">
+                <!--begin::Enhanced Footer-->
+                <div class="modal-footer border-0 pt-0 justify-content-center pb-8" style="background: linear-gradient(to bottom, transparent 0%, #f7fafc 100%);">
+                    <a href="#" target="_blank" class="btn btn-gradient-primary btn-lg px-12 py-3 fw-bold" id="modalProductLink">
                         <i class="ki-outline ki-shop fs-3 me-2"></i>
                         View Product
                     </a>
-                    <button type="button" class="btn btn-light btn-lg px-10 fw-bold" data-bs-dismiss="modal"
-                        style="border-radius: 10px;">
+                    <button type="button" class="btn btn-light btn-lg px-12 py-3 fw-bold" data-bs-dismiss="modal" style="border-radius: 12px; border: 2px solid #e2e8f0;">
                         Close
                     </button>
                 </div>
-                <!--end::Modal footer-->
+                <!--end::Enhanced Footer-->
             </div>
         </div>
     </div>
@@ -262,21 +300,20 @@
     <!--begin::Image Modal-->
     <div class="modal fade" id="modalImage" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content shadow-lg" style="border-radius: 16px;">
-                <!--begin::Modal header-->
-                <div class="modal-header border-0 pb-0">
-                    <h2 class="fw-bold" id="modalImageTitle">Image Preview</h2>
-                    <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
-                        <i class="ki-outline ki-cross fs-1"></i>
+            <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden; background: #000;">
+                <!--begin::Dark Header-->
+                <div class="modal-header border-0 pb-0" style="background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); padding: 20px 30px;">
+                    <h2 class="fw-bold text-white mb-0" id="modalImageTitle">Image Preview</h2>
+                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <i class="ki-outline ki-cross fs-1 text-white"></i>
                     </div>
                 </div>
-                <!--end::Modal header-->
+                <!--end::Dark Header-->
 
                 <!--begin::Modal body-->
-                <div class="modal-body p-10">
-                    <div class="text-center">
-                        <img id="modalImageEl" src="" alt="" class="mw-100 shadow-sm"
-                            style="max-height: 70vh; border-radius: 12px;">
+                <div class="modal-body p-8" style="background: #000;">
+                    <div class="text-center position-relative">
+                        <img id="modalImageEl" src="" alt="" class="rounded-3" style="max-width: 100%; max-height: 75vh; box-shadow: 0 20px 60px rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.1);">
                     </div>
                 </div>
                 <!--end::Modal body-->
@@ -288,20 +325,19 @@
     <!--begin::Video Modal-->
     <div class="modal fade" id="modalVideo" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content shadow-lg" style="border-radius: 16px;">
-                <!--begin::Modal header-->
-                <div class="modal-header border-0 pb-0">
-                    <h2 class="fw-bold" id="modalVideoTitle">Video Player</h2>
-                    <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
-                        <i class="ki-outline ki-cross fs-1"></i>
+            <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden; background: linear-gradient(135deg, #1e1e2d 0%, #2d2d44 100%);">
+                <!--begin::Video Header with Gradient-->
+                <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 30px;">
+                    <h2 class="fw-bold text-white mb-0" id="modalVideoTitle" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);"><i class="ki-outline ki-video fs-2 me-2"></i>Video Player</h2>
+                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.2); border-radius: 8px;">
+                        <i class="ki-outline ki-cross fs-1 text-white"></i>
                     </div>
                 </div>
-                <!--end::Modal header-->
+                <!--end::Video Header with Gradient-->
 
                 <!--begin::Modal body-->
-                <div class="modal-body p-10">
-                    <div id="modalVideoWrap" class="ratio ratio-16x9 overflow-hidden shadow-sm"
-                        style="border-radius: 12px;"></div>
+                <div class="modal-body p-8">
+                    <div id="modalVideoWrap" class="ratio ratio-16x9 rounded-3 overflow-hidden" style="box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 3px solid rgba(255,255,255,0.1);"></div>
                 </div>
                 <!--end::Modal body-->
             </div>
@@ -493,9 +529,35 @@
 
                 function showModal(modalId) {
                     const el = document.getElementById(modalId);
-                    if (!el || !window.bootstrap) return;
-                    const modal = new window.bootstrap.Modal(el);
-                    modal.show();
+                    if (!el) {
+                        console.error('Modal element not found: ' + modalId);
+                        return;
+                    }
+                    
+                    // Use jQuery Bootstrap modal method (more compatible with Laravel's Bootstrap setup)
+                    if (window.$ && typeof window.$.fn.modal === 'function') {
+                        $(el).modal('show');
+                    } else if (window.jQuery && typeof window.jQuery.fn.modal === 'function') {
+                        window.jQuery(el).modal('show');
+                    } else {
+                        // Fallback to vanilla Bootstrap
+                        try {
+                            let modalInstance;
+                            if (typeof bootstrap !== 'undefined') {
+                                modalInstance = new bootstrap.Modal(el);
+                            } else if (window.bootstrap) {
+                                modalInstance = new window.bootstrap.Modal(el);
+                            } else if (window.Bootstrap) {
+                                modalInstance = new window.Bootstrap.Modal(el);
+                            } else {
+                                console.error('Bootstrap Modal not available');
+                                return;
+                            }
+                            modalInstance.show();
+                        } catch(e) {
+                            console.error('Failed to show modal:', e);
+                        }
+                    }
                 }
 
                 function handleAction(h) {
@@ -513,6 +575,7 @@
                     }
 
                     if (h.action_type === 'popup_window') {
+                        console.log('Opening popup window for hotspot:', h);
                         document.getElementById('modalProductTitle').textContent = h.title || 'Product Details';
                         document.getElementById('modalProductName').textContent = h.title || '';
                         document.getElementById('modalProductDesc').textContent = h.description || '';
@@ -531,6 +594,7 @@
                         link.href = h.link || '#';
                         link.style.display = h.link ? '' : 'none';
 
+                        console.log('Calling showModal for modalProduct');
                         showModal('modalProduct');
                         return;
                     }
@@ -752,7 +816,7 @@
                             try {
                                 flipSound.currentTime = 0;
                                 flipSound.play().catch(() => {});
-                            } catch (e) {}
+                            } catch (e) {} 
                         }
                     });
 

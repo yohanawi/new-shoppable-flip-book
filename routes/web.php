@@ -79,6 +79,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{catalogPdf}/slicer/generate-images', [CatalogPdfSlicerController::class, 'generateImages'])->name('slicer.generate-images');
         Route::get('/{catalogPdf}/slicer/preview', [CatalogPdfSlicerController::class, 'preview'])->name('slicer.preview');
         Route::get('/{catalogPdf}/slicer/live', [CatalogPdfSlicerController::class, 'live'])->name('slicer.live');
+        Route::get('/{catalogPdf}/slicer/share', [CatalogPdfSlicerController::class, 'share'])->name('slicer.share');
 
         Route::get('/{catalogPdf}/slicer/pages/{page}/image', [CatalogPdfSlicerController::class, 'pageImage'])->name('slicer.pages.image');
         Route::get('/{catalogPdf}/slicer/pages/{page}/hotspots', [CatalogPdfSlicerController::class, 'hotspotsForPage'])->name('slicer.pages.hotspots');

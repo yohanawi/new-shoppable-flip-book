@@ -16,7 +16,8 @@
         #flipbook .page {
             background: #fff;
             overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
         }
 
         .page-inner {
@@ -46,26 +47,101 @@
             background: rgba(var(--bs-primary-rgb), 0.20);
             border-color: rgba(var(--bs-primary-rgb), 1);
             transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+        }
+
+        .toolbar-enhanced {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .toolbar-enhanced .btn {
+            font-weight: 600;
+        }
+
+        .page-indicator {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .share-link-container {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .share-link-container input {
+            flex: 1;
+        }
+
+        /* Fullscreen styles */
+        .fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #1e1e2d;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fullscreen-mode .fullscreen-toolbar {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+        }
+
+        .fullscreen-mode #flipbook {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 
     <!--begin::Toolbar-->
-    <div class="d-flex flex-wrap flex-stack gap-4 mb-8">
+    <div class="toolbar-enhanced mb-8">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-4">
+            <!--begin::Navigation-->
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-light" id="btnPrev">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-sm btn-light" id="btnNext">
+                    Next <i class="bi bi-chevron-right"></i>
+                </button>
+                <span class="page-indicator" id="pageIndicator">Page 1 of 1</span>
+            </div>
+            <!--end::Navigation-->
 
-        <!--begin::Actions-->
-        <div class="d-flex flex-wrap gap-2 ms-auto">
-            <a href="{{ route('catalog.pdfs.slicer.edit', $pdf) }}"
-                class="btn btn-sm btn-light-primary btn-active-primary fw-bold">
-                <i class="ki-outline ki-left fs-4 me-1"></i>
-                Back to Editor
-            </a>
-            <a href="{{ route('catalog.pdfs.slicer.live', $pdf) }}" target="_blank" class="btn btn-sm btn-success fw-bold">
-                <i class="ki-outline ki-rocket fs-4 me-1"></i>
-                Go Live
-                <i class="ki-outline ki-arrow-right fs-4 ms-1"></i>
-            </a>
+            <!--begin::Actions-->
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-sm btn-light" id="btnFullscreen">
+                    <i class="bi bi-fullscreen"></i> Fullscreen
+                </button>
+                <button type="button" class="btn btn-sm btn-light" id="btnShare">
+                    <i class="bi bi-share"></i> Share
+                </button>
+                <a href="{{ route('catalog.pdfs.slicer.edit', $pdf) }}" class="btn btn-sm btn-light">
+                    <i class="bi bi-arrow-left"></i> Editor
+                </a>
+                <a href="{{ route('catalog.pdfs.slicer.live', $pdf) }}" target="_blank" class="btn btn-sm btn-success">
+                    <i class="bi bi-rocket"></i> Go Live
+                </a>
+            </div>
+            <!--end::Actions-->
         </div>
-        <!--end::Actions-->
     </div>
     <!--end::Toolbar-->
 
@@ -74,26 +150,15 @@
         <!--begin::Card Header-->
         <div class="card-header border-0 pt-6">
             <div class="card-title">
-                <!--begin::Controls-->
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-icon btn-light-primary" id="btnPrev">
-                        <i class="ki-outline ki-left fs-3"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-icon btn-light-primary" id="btnNext">
-                        <i class="ki-outline ki-right fs-3"></i>
-                    </button>
-                    <div class="separator separator-vertical mx-2 h-30px"></div>
-                    <div class="badge badge-light-info fs-7 fw-bold" id="status">
-                        <i class="ki-outline ki-loading fs-6 me-1"></i>
-                        Loading…
-                    </div>
+                <div class="badge badge-light-info fs-7 fw-bold" id="status">
+                    <i class="ki-outline ki-loading fs-6 me-1"></i>
+                    Loading…
                 </div>
-                <!--end::Controls-->
             </div>
             <div class="card-toolbar">
-                <a class="btn btn-sm btn-light fw-bold" href="{{ route('catalog.pdfs.show', $pdf) }}">
-                    <i class="ki-outline ki-document fs-4 me-1"></i>
-                    PDF Details
+                <a class="btn btn-sm btn-light-primary fw-bold" href="{{ route('catalog.pdfs.download', $pdf) }}">
+                    <i class="bi bi-download me-1"></i>
+                    Download PDF
                 </a>
             </div>
         </div>
@@ -229,6 +294,33 @@
     </div>
     <!--end::Video Modal-->
 
+    <!--begin::Share Modal-->
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Share Shoppable Flipbook</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Share this link to allow others to view the interactive shoppable flipbook:
+                    </p>
+                    <div class="share-link-container">
+                        <input type="text" class="form-control" id="shareLink" readonly
+                            value="{{ route('catalog.pdfs.slicer.share', $pdf) }}">
+                        <button type="button" class="btn btn-primary" id="btnCopyLink">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <div class="mt-3" id="copySuccess" style="display:none;">
+                        <div class="alert alert-success">Link copied to clipboard!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end::Share Modal-->
+
     @push('scripts')
         <script src="{{ asset('assets/plugins/custom/turnjs/turn.min.js') }}"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -245,6 +337,10 @@
 
                 const statusEl = document.getElementById('status');
                 const flipbookEl = document.getElementById('flipbook');
+                const pageIndicatorEl = document.getElementById('pageIndicator');
+
+                let isFullscreen = false;
+                let $flipbook;
 
                 const mediaBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/hotspots'));
 
@@ -257,6 +353,13 @@
 
                 function setStatus(text) {
                     statusEl.innerHTML = `<i class="ki-outline ki-loading fs-6 me-1"></i>${text}`;
+                }
+
+                function updatePageIndicator() {
+                    if (!$flipbook) return;
+                    const current = $flipbook.turn('page');
+                    const total = $flipbook.turn('pages');
+                    pageIndicatorEl.textContent = `Page ${current} of ${total}`;
                 }
 
                 function mediaUrl(id, kind) {
@@ -514,7 +617,7 @@
                     statusEl.classList.add('badge-light-success');
 
                     try {
-                        const $flipbook = $('#flipbook');
+                        $flipbook = $('#flipbook');
                         flipbookEl.style.width = (sizing.display === 'double' ? sizing.w * 2 : sizing.w) + 'px';
                         flipbookEl.style.height = sizing.h + 'px';
                         $flipbook.turn({
@@ -526,8 +629,22 @@
                             gradients: true,
                         });
 
+                        // Update page indicator on page turn
+                        $flipbook.bind('turned', function(event, page) {
+                            updatePageIndicator();
+                        });
+
+                        updatePageIndicator();
+
                         document.getElementById('btnPrev').addEventListener('click', () => $flipbook.turn('previous'));
                         document.getElementById('btnNext').addEventListener('click', () => $flipbook.turn('next'));
+
+                        // Keyboard navigation
+                        window.addEventListener('keydown', (e) => {
+                            if (e.key === 'ArrowLeft') $flipbook.turn('previous');
+                            if (e.key === 'ArrowRight') $flipbook.turn('next');
+                            if (e.key === 'Escape' && isFullscreen) exitFullscreen();
+                        });
                     } catch (e) {
                         console.error(e);
                         statusEl.innerHTML = '<i class="ki-outline ki-information-5 fs-6 me-1"></i>Flip effect failed';
@@ -535,6 +652,90 @@
                         statusEl.classList.add('badge-light-warning');
                     }
                 }
+
+                // Fullscreen functionality
+                function enterFullscreen() {
+                    const card = document.querySelector('.card');
+                    const toolbar = document.querySelector('.toolbar-enhanced');
+
+                    isFullscreen = true;
+                    card.classList.add('fullscreen-mode');
+
+                    // Create fullscreen toolbar
+                    const fsToolbar = document.createElement('div');
+                    fsToolbar.className = 'fullscreen-toolbar';
+                    fsToolbar.innerHTML = `
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="button" class="btn btn-sm btn-light" id="btnPrevFs">Previous</button>
+                            <button type="button" class="btn btn-sm btn-light" id="btnNextFs">Next</button>
+                            <span id="pageIndicatorFs" style="margin-left: 15px;"></span>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-light" id="btnExitFullscreen">
+                                <i class="bi bi-fullscreen-exit"></i> Exit Fullscreen
+                            </button>
+                        </div>
+                    `;
+
+                    card.insertBefore(fsToolbar, card.firstChild);
+                    toolbar.style.display = 'none';
+
+                    // Add event listeners
+                    document.getElementById('btnPrevFs').addEventListener('click', () => $flipbook.turn('previous'));
+                    document.getElementById('btnNextFs').addEventListener('click', () => $flipbook.turn('next'));
+                    document.getElementById('btnExitFullscreen').addEventListener('click', exitFullscreen);
+
+                    // Update page info in fullscreen toolbar
+                    $flipbook.bind('turned.fullscreen', function() {
+                        const current = $flipbook.turn('page');
+                        const total = $flipbook.turn('pages');
+                        document.getElementById('pageIndicatorFs').textContent = `Page ${current} of ${total}`;
+                    });
+
+                    // Trigger initial update
+                    const current = $flipbook.turn('page');
+                    const total = $flipbook.turn('pages');
+                    document.getElementById('pageIndicatorFs').textContent = `Page ${current} of ${total}`;
+                }
+
+                function exitFullscreen() {
+                    const card = document.querySelector('.card');
+                    const toolbar = document.querySelector('.toolbar-enhanced');
+                    const fsToolbar = card.querySelector('.fullscreen-toolbar');
+
+                    isFullscreen = false;
+                    card.classList.remove('fullscreen-mode');
+
+                    if (fsToolbar) {
+                        fsToolbar.remove();
+                    }
+
+                    toolbar.style.display = 'flex';
+                    $flipbook.unbind('turned.fullscreen');
+                }
+
+                // Share functionality
+                document.getElementById('btnShare').addEventListener('click', function() {
+                    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+                    shareModal.show();
+                });
+
+                document.getElementById('btnCopyLink').addEventListener('click', function() {
+                    const linkInput = document.getElementById('shareLink');
+                    linkInput.select();
+                    linkInput.setSelectionRange(0, 99999);
+
+                    navigator.clipboard.writeText(linkInput.value).then(function() {
+                        document.getElementById('copySuccess').style.display = 'block';
+                        setTimeout(function() {
+                            document.getElementById('copySuccess').style.display = 'none';
+                        }, 3000);
+                    }).catch(function(err) {
+                        alert('Failed to copy link: ' + err);
+                    });
+                });
+
+                document.getElementById('btnFullscreen').addEventListener('click', enterFullscreen);
 
                 render();
             })();

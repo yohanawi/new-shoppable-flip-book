@@ -76,6 +76,31 @@ class CatalogPdfSlicerController extends Controller
         ]);
     }
 
+    public function share(CatalogPdf $catalogPdf)
+    {
+        $this->assertSlicer($catalogPdf);
+        
+        // For private PDFs, only owner can access
+        if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $catalogPdf->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $pages = $catalogPdf->pages()
+            ->orderBy('display_order')
+            ->get(['id', 'page_number', 'display_order', 'title', 'image_disk', 'image_path', 'image_width', 'image_height']);
+
+        $hotspots = $catalogPdf->hotspots()
+            ->where('is_active', true)
+            ->get();
+
+        return view('pages.apps.catalog.slicer-share', [
+            'pdf' => $catalogPdf,
+            'pages' => $pages,
+            'hotspots' => $hotspots,
+            'pdfUrl' => route('catalog.pdfs.source', $catalogPdf),
+        ]);
+    }
+
     public function initPages(Request $request, CatalogPdf $catalogPdf)
     {
         $this->assertSlicer($catalogPdf);
@@ -92,7 +117,7 @@ class CatalogPdfSlicerController extends Controller
         }
 
         DB::transaction(function () use ($catalogPdf, $validated) {
-            $count = (int) $validated['page_count'];
+            $count = (int) $validated['page_count']; 
             for ($i = 1; $i <= $count; $i++) {
                 $catalogPdf->pages()->create([
                     'page_number' => $i,

@@ -8,10 +8,12 @@ use App\Models\CatalogPdfEvent;
 use App\Models\CatalogPdfHotspot;
 use App\Models\CatalogPdfPage;
 use App\Services\CatalogPdfSlicerImageGenerator;
+use App\Services\Notifications\CatalogPdfMilestoneNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CatalogPdfSlicerController extends Controller
@@ -28,7 +30,7 @@ class CatalogPdfSlicerController extends Controller
         return view('pages.apps.catalog.slicer-editor', [
             'pdf' => $catalogPdf,
             'pages' => $pages,
-            'pdfUrl' => route('catalog.pdfs.source', $catalogPdf),
+            'pdfUrl' => route('catalog.pdfs.file', $catalogPdf),
             'shapeOptions' => CatalogPdfHotspot::shapeOptions(),
             'actionOptions' => CatalogPdfHotspot::actionOptions(),
         ]);
@@ -40,18 +42,21 @@ class CatalogPdfSlicerController extends Controller
         $this->authorizePdfAccess($catalogPdf);
 
         $pages = $catalogPdf->pages()
+            ->where('is_hidden', false)
             ->orderBy('display_order')
             ->get(['id', 'page_number', 'display_order', 'title', 'image_disk', 'image_path', 'image_width', 'image_height']);
 
         $hotspots = $catalogPdf->hotspots()
             ->where('is_active', true)
-            ->get();
+            ->get()
+            ->map(fn(CatalogPdfHotspot $hotspot) => $this->serializeHotspot($catalogPdf, $hotspot))
+            ->values();
 
         return view('pages.apps.catalog.slicer-preview', [
             'pdf' => $catalogPdf,
             'pages' => $pages,
             'hotspots' => $hotspots,
-            'pdfUrl' => route('catalog.pdfs.source', $catalogPdf),
+            'pdfUrl' => route('catalog.pdfs.file', $catalogPdf),
         ]);
     }
 
@@ -61,43 +66,49 @@ class CatalogPdfSlicerController extends Controller
         $this->authorizePdfAccess($catalogPdf);
 
         $pages = $catalogPdf->pages()
+            ->where('is_hidden', false)
             ->orderBy('display_order')
             ->get(['id', 'page_number', 'display_order', 'title', 'image_disk', 'image_path', 'image_width', 'image_height']);
 
         $hotspots = $catalogPdf->hotspots()
             ->where('is_active', true)
-            ->get();
+            ->get()
+            ->map(fn(CatalogPdfHotspot $hotspot) => $this->serializeHotspot($catalogPdf, $hotspot))
+            ->values();
 
         return view('pages.apps.catalog.slicer-live', [
             'pdf' => $catalogPdf,
             'pages' => $pages,
             'hotspots' => $hotspots,
-            'pdfUrl' => route('catalog.pdfs.source', $catalogPdf),
+            'pdfUrl' => route('catalog.pdfs.file', $catalogPdf),
         ]);
     }
 
     public function share(CatalogPdf $catalogPdf)
     {
         $this->assertSlicer($catalogPdf);
-        
+
         // For private PDFs, only owner can access
         if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $catalogPdf->user_id !== Auth::id()) {
             abort(403);
         }
 
         $pages = $catalogPdf->pages()
+            ->where('is_hidden', false)
             ->orderBy('display_order')
             ->get(['id', 'page_number', 'display_order', 'title', 'image_disk', 'image_path', 'image_width', 'image_height']);
 
         $hotspots = $catalogPdf->hotspots()
             ->where('is_active', true)
-            ->get();
+            ->get()
+            ->map(fn(CatalogPdfHotspot $hotspot) => $this->serializeHotspot($catalogPdf, $hotspot))
+            ->values();
 
         return view('pages.apps.catalog.slicer-share', [
             'pdf' => $catalogPdf,
             'pages' => $pages,
             'hotspots' => $hotspots,
-            'pdfUrl' => route('catalog.pdfs.source', $catalogPdf),
+            'pdfUrl' => route('catalog.pdfs.file', $catalogPdf),
         ]);
     }
 
@@ -117,7 +128,7 @@ class CatalogPdfSlicerController extends Controller
         }
 
         DB::transaction(function () use ($catalogPdf, $validated) {
-            $count = (int) $validated['page_count']; 
+            $count = (int) $validated['page_count'];
             for ($i = 1; $i <= $count; $i++) {
                 $catalogPdf->pages()->create([
                     'page_number' => $i,
@@ -149,7 +160,7 @@ class CatalogPdfSlicerController extends Controller
     public function pageImage(CatalogPdf $catalogPdf, CatalogPdfPage $page): BinaryFileResponse
     {
         $this->assertSlicer($catalogPdf);
-        $this->authorizePdfAccess($catalogPdf);
+        $this->authorizeViewer($catalogPdf);
         abort_unless($page->catalog_pdf_id === $catalogPdf->id, 404);
 
         $disk = $page->image_disk ?: $catalogPdf->storage_disk;
@@ -168,7 +179,9 @@ class CatalogPdfSlicerController extends Controller
             ->where('catalog_pdf_page_id', $page->id)
             ->orderBy('display_order')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(fn(CatalogPdfHotspot $hotspot) => $this->serializeHotspot($catalogPdf, $hotspot))
+            ->values();
 
         return response()->json([
             'data' => $items,
@@ -182,6 +195,11 @@ class CatalogPdfSlicerController extends Controller
         abort_unless($page->catalog_pdf_id === $catalogPdf->id, 404);
 
         $validated = $this->validateHotspot($request);
+        if (empty($validated['display_order'])) {
+            $validated['display_order'] = (int) $catalogPdf->hotspots()
+                ->where('catalog_pdf_page_id', $page->id)
+                ->max('display_order') + 1;
+        }
 
         $disk = $catalogPdf->storage_disk;
 
@@ -197,7 +215,7 @@ class CatalogPdfSlicerController extends Controller
         });
 
         return response()->json([
-            'data' => $hotspot,
+            'data' => $this->serializeHotspot($catalogPdf, $hotspot),
         ], 201);
     }
 
@@ -208,6 +226,9 @@ class CatalogPdfSlicerController extends Controller
         abort_unless($hotspot->catalog_pdf_id === $catalogPdf->id, 404);
 
         $validated = $this->validateHotspot($request, isUpdate: true);
+        if (empty($validated['display_order'])) {
+            $validated['display_order'] = $hotspot->display_order;
+        }
         $disk = $catalogPdf->storage_disk;
 
         $hotspot = DB::transaction(function () use ($validated, $request, $hotspot, $disk) {
@@ -220,7 +241,7 @@ class CatalogPdfSlicerController extends Controller
         });
 
         return response()->json([
-            'data' => $hotspot,
+            'data' => $this->serializeHotspot($catalogPdf, $hotspot),
         ]);
     }
 
@@ -239,7 +260,7 @@ class CatalogPdfSlicerController extends Controller
     public function hotspotMedia(CatalogPdf $catalogPdf, CatalogPdfHotspot $hotspot, string $kind): BinaryFileResponse
     {
         $this->assertSlicer($catalogPdf);
-        $this->authorizePdfAccess($catalogPdf);
+        $this->authorizeViewer($catalogPdf);
         abort_unless($hotspot->catalog_pdf_id === $catalogPdf->id, 404);
 
         $disk = null;
@@ -263,7 +284,7 @@ class CatalogPdfSlicerController extends Controller
         return response()->file(Storage::disk($disk)->path($path));
     }
 
-    public function track(Request $request, CatalogPdf $catalogPdf)
+    public function track(Request $request, CatalogPdf $catalogPdf, CatalogPdfMilestoneNotificationService $milestoneNotificationService)
     {
         $this->assertSlicer($catalogPdf);
         $this->authorizePdfAccess($catalogPdf);
@@ -286,7 +307,7 @@ class CatalogPdfSlicerController extends Controller
             }
         }
 
-        CatalogPdfEvent::create([
+        $event = CatalogPdfEvent::create([
             'catalog_pdf_id' => $catalogPdf->id,
             'user_id' => Auth::id(),
             'session_id' => $request->session()->getId(),
@@ -298,6 +319,8 @@ class CatalogPdfSlicerController extends Controller
             'user_agent' => substr((string) $request->userAgent(), 0, 512),
             'created_at' => now(),
         ]);
+
+        $milestoneNotificationService->handleTrackedEvent($catalogPdf, $event->event_type);
 
         return response()->json(['ok' => true]);
     }
@@ -348,14 +371,88 @@ class CatalogPdfSlicerController extends Controller
             abort(422, 'Invalid shape data.');
         }
 
+        $errors = [];
+
+        if (($validated['action_type'] ?? null) === CatalogPdfHotspot::ACTION_INTERNAL_PAGE
+            && empty($validated['internal_page_number'])
+        ) {
+            $errors['internal_page_number'] = 'Select the internal page to open.';
+        }
+
+        if (($validated['action_type'] ?? null) === CatalogPdfHotspot::ACTION_EXTERNAL_LINK
+            && blank($validated['link'] ?? null)
+        ) {
+            $errors['link'] = 'Enter the external URL.';
+        }
+
+        if (($validated['action_type'] ?? null) === CatalogPdfHotspot::ACTION_POPUP_IMAGE
+            && !$isUpdate
+            && !$request->hasFile('popup_image')
+        ) {
+            $errors['popup_image'] = 'Upload the popup image.';
+        }
+
+        if (($validated['action_type'] ?? null) === CatalogPdfHotspot::ACTION_POPUP_VIDEO
+            && !$isUpdate
+            && !$request->hasFile('popup_video')
+            && blank($validated['popup_video_url'] ?? null)
+        ) {
+            $errors['popup_video'] = 'Upload a popup video file or provide a popup video URL.';
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
         // Normalize booleans
         $validated['is_active'] = (bool) ($validated['is_active'] ?? false);
-        $validated['display_order'] = (int) ($validated['display_order'] ?? 0);
+        $validated['display_order'] = isset($validated['display_order'])
+            ? (int) $validated['display_order']
+            : null;
+        $validated['title'] = filled($validated['title'] ?? null) ? trim((string) $validated['title']) : null;
+        $validated['color'] = filled($validated['color'] ?? null) ? trim((string) $validated['color']) : null;
+        $validated['link'] = filled($validated['link'] ?? null) ? trim((string) $validated['link']) : null;
+        $validated['description'] = filled($validated['description'] ?? null)
+            ? trim((string) $validated['description'])
+            : null;
+        $validated['popup_video_url'] = filled($validated['popup_video_url'] ?? null)
+            ? trim((string) $validated['popup_video_url'])
+            : null;
 
         // Action-specific cleanup (keep DB tidy)
         $action = $validated['action_type'] ?? null;
         if ($action === CatalogPdfHotspot::ACTION_INTERNAL_PAGE) {
+            $validated['link'] = null;
+            $validated['description'] = null;
+            $validated['price'] = null;
             $validated['popup_video_url'] = null;
+        }
+
+        if ($action === CatalogPdfHotspot::ACTION_EXTERNAL_LINK) {
+            $validated['internal_page_number'] = null;
+            $validated['description'] = null;
+            $validated['price'] = null;
+            $validated['popup_video_url'] = null;
+        }
+
+        if ($action === CatalogPdfHotspot::ACTION_POPUP_WINDOW) {
+            $validated['internal_page_number'] = null;
+            $validated['popup_video_url'] = null;
+        }
+
+        if ($action === CatalogPdfHotspot::ACTION_POPUP_IMAGE) {
+            $validated['link'] = null;
+            $validated['internal_page_number'] = null;
+            $validated['description'] = null;
+            $validated['price'] = null;
+            $validated['popup_video_url'] = null;
+        }
+
+        if ($action === CatalogPdfHotspot::ACTION_POPUP_VIDEO) {
+            $validated['link'] = null;
+            $validated['internal_page_number'] = null;
+            $validated['description'] = null;
+            $validated['price'] = null;
         }
 
         return $validated;
@@ -386,8 +483,10 @@ class CatalogPdfSlicerController extends Controller
             $hotspot->popup_video_path = $path;
         }
 
-        if ($request->filled('popup_video_url')) {
-            $hotspot->popup_video_url = $request->input('popup_video_url');
+        if ($request->has('popup_video_url')) {
+            $hotspot->popup_video_url = $request->filled('popup_video_url')
+                ? trim((string) $request->input('popup_video_url'))
+                : null;
         }
 
         $hotspot->save();
@@ -413,13 +512,124 @@ class CatalogPdfSlicerController extends Controller
 
     private function assertSlicer(CatalogPdf $pdf): void
     {
-        abort_unless($pdf->isSlicerTemplate(), 404);
+        abort_unless($pdf->supportsSlicer(), 404);
     }
 
     private function authorizePdfAccess(CatalogPdf $pdf): void
     {
+        if (Auth::user()?->isAdmin()) {
+            return;
+        }
+
+        if ($pdf->user_id !== Auth::id()) {
+            abort(403);
+        }
+    }
+
+    private function authorizeViewer(CatalogPdf $pdf): void
+    {
         if ($pdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $pdf->user_id !== Auth::id()) {
             abort(403);
         }
+    }
+
+    private function serializeHotspot(CatalogPdf $catalogPdf, CatalogPdfHotspot $hotspot): array
+    {
+        return [
+            'id' => (int) $hotspot->id,
+            'catalog_pdf_id' => (int) $hotspot->catalog_pdf_id,
+            'catalog_pdf_page_id' => (int) $hotspot->catalog_pdf_page_id,
+            'display_order' => (int) $hotspot->display_order,
+            'shape_type' => (string) $hotspot->shape_type,
+            'shape_data' => $hotspot->shape_data,
+            'runtime_shape' => $this->runtimeShapeForHotspot($hotspot),
+            'x' => (float) $hotspot->x,
+            'y' => (float) $hotspot->y,
+            'w' => (float) $hotspot->w,
+            'h' => (float) $hotspot->h,
+            'action_type' => (string) $hotspot->action_type,
+            'is_active' => (bool) $hotspot->is_active,
+            'title' => $hotspot->title,
+            'color' => $hotspot->color,
+            'link' => $hotspot->link,
+            'internal_page_number' => $hotspot->internal_page_number,
+            'description' => $hotspot->description,
+            'price' => $hotspot->price,
+            'thumbnail_path' => $hotspot->thumbnail_path,
+            'thumbnail_url' => $hotspot->thumbnail_path
+                ? route('catalog.pdfs.slicer.hotspots.media', [$catalogPdf, $hotspot, 'thumbnail'])
+                : null,
+            'popup_image_path' => $hotspot->popup_image_path,
+            'popup_image_url' => $hotspot->popup_image_path
+                ? route('catalog.pdfs.slicer.hotspots.media', [$catalogPdf, $hotspot, 'popup_image'])
+                : null,
+            'popup_video_path' => $hotspot->popup_video_path,
+            'popup_video_file_url' => $hotspot->popup_video_path
+                ? route('catalog.pdfs.slicer.hotspots.media', [$catalogPdf, $hotspot, 'popup_video'])
+                : null,
+            'popup_video_url' => $hotspot->popup_video_url,
+        ];
+    }
+
+    private function runtimeShapeForHotspot(CatalogPdfHotspot $hotspot): array
+    {
+        $shapeData = is_array($hotspot->shape_data) ? $hotspot->shape_data : [];
+        $runtimeShape = $shapeData['runtimeShape'] ?? $shapeData['runtime_shape'] ?? null;
+
+        if (is_array($runtimeShape)) {
+            return $this->normalizeRuntimeShape($runtimeShape, $hotspot);
+        }
+
+        return [
+            'type' => $hotspot->shape_type === CatalogPdfHotspot::SHAPE_RECTANGLE ? 'rectangle' : 'polygon',
+            'points' => [
+                ['x' => (float) $hotspot->x, 'y' => (float) $hotspot->y],
+                ['x' => (float) ($hotspot->x + $hotspot->w), 'y' => (float) $hotspot->y],
+                ['x' => (float) ($hotspot->x + $hotspot->w), 'y' => (float) ($hotspot->y + $hotspot->h)],
+                ['x' => (float) $hotspot->x, 'y' => (float) ($hotspot->y + $hotspot->h)],
+            ],
+            'bbox' => [
+                'x' => (float) $hotspot->x,
+                'y' => (float) $hotspot->y,
+                'w' => (float) $hotspot->w,
+                'h' => (float) $hotspot->h,
+            ],
+        ];
+    }
+
+    private function normalizeRuntimeShape(array $runtimeShape, CatalogPdfHotspot $hotspot): array
+    {
+        $points = collect($runtimeShape['points'] ?? [])
+            ->filter(fn($point) => is_array($point) && isset($point['x'], $point['y']))
+            ->map(function (array $point) {
+                return [
+                    'x' => max(0, min(1, (float) $point['x'])),
+                    'y' => max(0, min(1, (float) $point['y'])),
+                ];
+            })
+            ->values()
+            ->all();
+
+        if (count($points) < 3) {
+            $points = [
+                ['x' => (float) $hotspot->x, 'y' => (float) $hotspot->y],
+                ['x' => (float) ($hotspot->x + $hotspot->w), 'y' => (float) $hotspot->y],
+                ['x' => (float) ($hotspot->x + $hotspot->w), 'y' => (float) ($hotspot->y + $hotspot->h)],
+                ['x' => (float) $hotspot->x, 'y' => (float) ($hotspot->y + $hotspot->h)],
+            ];
+        }
+
+        return [
+            'type' => in_array($runtimeShape['type'] ?? null, ['rectangle', 'polygon', 'free'], true)
+                ? (string) $runtimeShape['type']
+                : ($hotspot->shape_type === CatalogPdfHotspot::SHAPE_RECTANGLE ? 'rectangle' : 'polygon'),
+            'points' => $points,
+            'bbox' => [
+                'x' => (float) $hotspot->x,
+                'y' => (float) $hotspot->y,
+                'w' => (float) $hotspot->w,
+                'h' => (float) $hotspot->h,
+            ],
+        ];
     }
 }

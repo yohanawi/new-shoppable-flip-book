@@ -20,7 +20,7 @@ class UserManagementController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create() 
+    public function create()
     {
         //
     }
@@ -63,5 +63,35 @@ class UserManagementController extends Controller
     public function destroy(User $user)
     {
         //
+    }
+
+    /**
+     * Show the user's profile page.
+     */
+    public function profile(Request $request)
+    {
+        return view('pages/apps.user-management.users.profile', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
+     * Show the user's settings page.
+     */
+    public function settings(Request $request)
+    {
+        return view('pages/apps.user-management.users.settings', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    /**
+     * Update the user's settings.
+     */
+    public function updateSettings(Request $request)
+    {
+        // Validate and update user settings here
+        // Example: $request->user()->update($request->only(['name', 'email']));
+        return redirect()->route('account.settings')->with('status', 'Settings updated!');
     }
 }

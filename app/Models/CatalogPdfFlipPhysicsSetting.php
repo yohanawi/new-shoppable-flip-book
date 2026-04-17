@@ -10,6 +10,8 @@ class CatalogPdfFlipPhysicsSetting extends Model
 {
     use HasFactory;
 
+    private const DEFAULT_DISPLAY_MODE = 'auto';
+
     protected $table = 'catalog_pdf_flip_physics_settings';
 
     protected $fillable = [
@@ -36,6 +38,11 @@ class CatalogPdfFlipPhysicsSetting extends Model
     public const PRESET_SMOOTH = 'smooth';
     public const PRESET_MINIMAL = 'minimal';
 
+    public static function defaultPreset(): string
+    {
+        return self::PRESET_REALISTIC;
+    }
+
     public static function presetOptions(): array
     {
         return [
@@ -46,48 +53,83 @@ class CatalogPdfFlipPhysicsSetting extends Model
         ];
     }
 
+    public static function presetDefaults(): array
+    {
+        return [
+            self::PRESET_REALISTIC => [
+                'duration_ms' => 900,
+                'gradients' => true,
+                'acceleration' => true,
+                'elevation' => 50,
+                'display_mode' => self::DEFAULT_DISPLAY_MODE,
+                'render_scale_percent' => 120,
+            ],
+            self::PRESET_SNAPPY => [
+                'duration_ms' => 550,
+                'gradients' => true,
+                'acceleration' => true,
+                'elevation' => 30,
+                'display_mode' => self::DEFAULT_DISPLAY_MODE,
+                'render_scale_percent' => 110,
+            ],
+            self::PRESET_SMOOTH => [
+                'duration_ms' => 1200,
+                'gradients' => true,
+                'acceleration' => true,
+                'elevation' => 70,
+                'display_mode' => self::DEFAULT_DISPLAY_MODE,
+                'render_scale_percent' => 140,
+            ],
+            self::PRESET_MINIMAL => [
+                'duration_ms' => 700,
+                'gradients' => false,
+                'acceleration' => false,
+                'elevation' => 10,
+                'display_mode' => self::DEFAULT_DISPLAY_MODE,
+                'render_scale_percent' => 100,
+            ],
+        ];
+    }
+
+    public static function attributesForPreset(string $preset): array
+    {
+        $defaults = self::presetDefaults();
+        $normalizedPreset = array_key_exists($preset, $defaults)
+            ? $preset
+            : self::defaultPreset();
+
+        return $defaults[$normalizedPreset];
+    }
+
     public function pdf(): BelongsTo
     {
         return $this->belongsTo(CatalogPdf::class, 'catalog_pdf_id');
     }
 
-    public function applyPreset(string $preset): void
+    public function applyPreset(string $preset, array $overrides = []): void
     {
-        $this->preset = $preset;
+        $normalizedPreset = array_key_exists($preset, self::presetOptions())
+            ? $preset
+            : self::defaultPreset();
 
-        switch ($preset) {
-            case self::PRESET_SNAPPY:
-                $this->duration_ms = 550;
-                $this->gradients = true;
-                $this->acceleration = true;
-                $this->elevation = 30;
-                $this->render_scale_percent = 110;
-                break;
+        $this->preset = $normalizedPreset;
+        $this->fill(array_merge(
+            self::attributesForPreset($normalizedPreset),
+            $overrides
+        ));
+    }
 
-            case self::PRESET_SMOOTH:
-                $this->duration_ms = 1200;
-                $this->gradients = true;
-                $this->acceleration = true;
-                $this->elevation = 70;
-                $this->render_scale_percent = 140;
-                break;
+    public function viewerSettings(): array
+    {
+        $defaults = self::attributesForPreset($this->preset ?: self::defaultPreset());
 
-            case self::PRESET_MINIMAL:
-                $this->duration_ms = 700;
-                $this->gradients = false;
-                $this->acceleration = false;
-                $this->elevation = 10;
-                $this->render_scale_percent = 100;
-                break;
-
-            case self::PRESET_REALISTIC:
-            default:
-                $this->duration_ms = 900;
-                $this->gradients = true;
-                $this->acceleration = true;
-                $this->elevation = 50;
-                $this->render_scale_percent = 120;
-                break;
-        }
+        return [
+            'duration' => (int) ($this->duration_ms ?? $defaults['duration_ms']),
+            'gradients' => (bool) ($this->gradients ?? $defaults['gradients']),
+            'acceleration' => (bool) ($this->acceleration ?? $defaults['acceleration']),
+            'elevation' => (int) ($this->elevation ?? $defaults['elevation']),
+            'displayMode' => (string) ($this->display_mode ?? $defaults['display_mode']),
+            'renderScale' => (int) ($this->render_scale_percent ?? $defaults['render_scale_percent']) / 100,
+        ];
     }
 }

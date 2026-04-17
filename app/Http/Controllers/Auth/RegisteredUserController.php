@@ -9,8 +9,11 @@ use Illuminate\Validation\Rules;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Auth\Events\Registered;
 use App\Providers\RouteServiceProvider;
+use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class RegisteredUserController extends Controller
 {
@@ -36,24 +39,45 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'last_login_at' => \Illuminate\Support\Carbon::now()->toDateTimeString(),
-            'last_login_ip' => $request->getClientIp()
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'customer',
+            'email_verified_at' => app()->environment('local') ? Carbon::now() : null,
+            'last_login_at' => Carbon::now()->toDateTimeString(),
+            'last_login_ip' => $request->getClientIp(),
         ]);
 
-        event(new Registered($user));
+        $rolesTable = config('permission.table_names.roles', 'roles');
+        $modelHasRolesTable = config('permission.table_names.model_has_roles', 'model_has_roles');
 
-        // Auth::login($user);
+        if (Schema::hasTable($rolesTable) && Schema::hasTable($modelHasRolesTable)) {
+            $customerRole = Role::findOrCreate('customer', config('auth.defaults.guard', 'web'));
+            $user->assignRole($customerRole);
+        }
 
-        // return redirect(RouteServiceProvider::HOME);
+        if (!app()->environment('local')) {
+            event(new Registered($user));
+        }
+
+        Auth::login($user);
+
+        return $this->redirectAfterAuthentication($user);
+    }
+
+    private function redirectAfterAuthentication(User $user): RedirectResponse
+    {
+        if ($user->isCustomer()) {
+            return redirect()->route('catalog.pdfs.create');
+        }
+
+        return redirect(RouteServiceProvider::HOME);
     }
 }

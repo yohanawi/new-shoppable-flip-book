@@ -13,6 +13,8 @@ class CatalogPdf extends Model
 {
     use HasFactory;
 
+    public const TEMPLATE_UPLOADED = 'uploaded';
+
     protected $fillable = [
         'user_id',
         'title',
@@ -40,10 +42,25 @@ class CatalogPdf extends Model
     public static function templateTypeOptions(): array
     {
         return [
+            self::TEMPLATE_UPLOADED => 'Uploaded PDF',
             self::TEMPLATE_PAGE_MANAGEMENT => 'Page Management',
             self::TEMPLATE_FLIP_PHYSICS => 'Flip Physics',
             self::TEMPLATE_SLICER_SHOPPABLE => 'Slicer (Shoppable)',
         ];
+    }
+
+    public static function workflowTypeOptions(): array
+    {
+        return [
+            self::TEMPLATE_PAGE_MANAGEMENT => 'Page Management',
+            self::TEMPLATE_FLIP_PHYSICS => 'Flip Physics',
+            self::TEMPLATE_SLICER_SHOPPABLE => 'Slicer (Shoppable)',
+        ];
+    }
+
+    public static function defaultTemplateType(): string
+    {
+        return self::TEMPLATE_UPLOADED;
     }
 
     public static function visibilityOptions(): array
@@ -74,14 +91,49 @@ class CatalogPdf extends Model
         return $this->hasOne(CatalogPdfFlipPhysicsSetting::class, 'catalog_pdf_id');
     }
 
+    public function events(): HasMany
+    {
+        return $this->hasMany(CatalogPdfEvent::class, 'catalog_pdf_id');
+    }
+
     public function isPageManagementTemplate(): bool
     {
         return $this->template_type === self::TEMPLATE_PAGE_MANAGEMENT;
     }
 
+    public function isUploadedTemplate(): bool
+    {
+        return $this->template_type === self::TEMPLATE_UPLOADED;
+    }
+
+    public function isFlipPhysicsTemplate(): bool
+    {
+        return $this->template_type === self::TEMPLATE_FLIP_PHYSICS;
+    }
+
     public function isSlicerTemplate(): bool
     {
         return $this->template_type === self::TEMPLATE_SLICER_SHOPPABLE;
+    }
+
+    public function supportsWorkflowFeatures(): bool
+    {
+        return filled($this->pdf_path);
+    }
+
+    public function supportsPageManagement(): bool
+    {
+        return $this->supportsWorkflowFeatures();
+    }
+
+    public function supportsFlipPhysics(): bool
+    {
+        return $this->supportsWorkflowFeatures();
+    }
+
+    public function supportsSlicer(): bool
+    {
+        return $this->supportsWorkflowFeatures();
     }
 
     public function storagePath(): string

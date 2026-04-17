@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\CatalogPdfPageManagementRenderer;
+use App\Services\CatalogPdfSlicerImageGenerator;
 use App\Services\PdfPageCounter;
 
 class CatalogPdfPageManagementController extends Controller
@@ -76,7 +78,15 @@ class CatalogPdfPageManagementController extends Controller
             'pages.*.display_order' => ['required', 'integer', 'min:1', 'max:100000'],
             'pages.*.is_hidden' => ['nullable', 'boolean'],
             'pages.*.is_locked' => ['nullable', 'boolean'],
+            'pages.*.is_deleted' => ['nullable', 'boolean'],
         ]);
+
+        if (!$this->hasVisiblePagesAfterUpdate($catalogPdf, $validated['pages'])) {
+            return redirect()
+                ->back()
+                ->withErrors(['pages' => 'At least one page must remain visible in the managed PDF.'])
+                ->withInput();
+        }
 
         DB::transaction(function () use ($validated, $catalogPdf) {
             $existingPages = $catalogPdf->pages()->get()->keyBy('id');
@@ -89,6 +99,7 @@ class CatalogPdfPageManagementController extends Controller
 
                 // Allow toggling lock anytime
                 $newIsLocked = (bool) ($payload['is_locked'] ?? false);
+                $shouldDelete = (bool) ($payload['is_deleted'] ?? false);
 
                 // If locked, do not allow title/order/hidden changes
                 if ($page->is_locked && $newIsLocked) {
@@ -98,6 +109,12 @@ class CatalogPdfPageManagementController extends Controller
                 }
 
                 $page->is_locked = $newIsLocked;
+
+                if ($shouldDelete) {
+                    $page->delete();
+                    continue;
+                }
+
                 $page->title = $payload['title'] ?? null;
                 $page->display_order = (int) $payload['display_order'];
                 $page->is_hidden = (bool) ($payload['is_hidden'] ?? false);
@@ -112,6 +129,8 @@ class CatalogPdfPageManagementController extends Controller
                 $p->save();
             }
         });
+
+        $this->refreshManagedPdf($catalogPdf);
 
         return redirect()
             ->route('catalog.pdfs.manage', $catalogPdf)
@@ -147,6 +166,8 @@ class CatalogPdfPageManagementController extends Controller
             }
         });
 
+        $this->refreshManagedPdf($catalogPdf);
+
         return redirect()
             ->route('catalog.pdfs.manage', $catalogPdf)
             ->with('success', 'Pages initialized successfully.');
@@ -169,6 +190,8 @@ class CatalogPdfPageManagementController extends Controller
             $p->display_order = $order++;
             $p->save();
         }
+
+        $this->refreshManagedPdf($catalogPdf);
 
         return redirect()
             ->route('catalog.pdfs.manage', $catalogPdf)
@@ -202,6 +225,9 @@ class CatalogPdfPageManagementController extends Controller
             $catalogPdf->size = $file->getSize();
             $catalogPdf->save();
 
+            Storage::disk($disk)->deleteDirectory('catalog-slicer/' . $catalogPdf->id);
+            $catalogPdf->hotspots()->delete();
+
             // Rebuild pages
             $catalogPdf->pages()->withTrashed()->forceDelete();
 
@@ -224,6 +250,9 @@ class CatalogPdfPageManagementController extends Controller
             }
         });
 
+        $this->refreshManagedPdf($catalogPdf);
+        app(CatalogPdfSlicerImageGenerator::class)->generate($catalogPdf->fresh() ?? $catalogPdf);
+
         return redirect()
             ->route('catalog.pdfs.manage', $catalogPdf)
             ->with('success', 'PDF replaced and pages re-initialized.');
@@ -231,14 +260,70 @@ class CatalogPdfPageManagementController extends Controller
 
     private function assertPageManagement(CatalogPdf $pdf): void
     {
-        abort_unless($pdf->isPageManagementTemplate(), 404);
+        abort_unless($pdf->supportsPageManagement(), 404);
     }
 
     private function authorizePdfAccess(CatalogPdf $pdf): void
     {
-        // Basic rule: private PDFs are only accessible to uploader
-        if ($pdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $pdf->user_id !== Auth::id()) {
+        if (Auth::user()?->isAdmin()) {
+            return;
+        }
+
+        if ($pdf->user_id !== Auth::id()) {
             abort(403);
         }
+    }
+
+    private function refreshManagedPdf(CatalogPdf $pdf): void
+    {
+        try {
+            $freshPdf = $pdf->fresh();
+            if (!$freshPdf) {
+                return;
+            }
+
+            $renderer = app(CatalogPdfPageManagementRenderer::class);
+            $renderer->forgetRenderedFiles($freshPdf);
+            $renderer->renderPath($freshPdf);
+        } catch (\Throwable $e) {
+            Log::warning('Managed PDF refresh failed after page-management update.', [
+                'catalog_pdf_id' => $pdf->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function hasVisiblePagesAfterUpdate(CatalogPdf $pdf, array $pagesPayload): bool
+    {
+        $existingPages = $pdf->pages()->get()->keyBy('id');
+
+        foreach ($pagesPayload as $pageId => $payload) {
+            $page = $existingPages->get((int) $pageId);
+            if (!$page) {
+                continue;
+            }
+
+            $newIsLocked = (bool) ($payload['is_locked'] ?? false);
+            $shouldDelete = (bool) ($payload['is_deleted'] ?? false);
+
+            if ($page->is_locked && $newIsLocked) {
+                if (!$page->is_hidden) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if ($shouldDelete) {
+                continue;
+            }
+
+            $willBeHidden = (bool) ($payload['is_hidden'] ?? false);
+            if (!$willBeHidden) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

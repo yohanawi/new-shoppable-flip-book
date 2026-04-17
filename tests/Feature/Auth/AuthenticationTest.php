@@ -28,6 +28,21 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
+        $response->assertRedirect(route('catalog.pdfs.create'));
+    }
+
+    public function test_admins_still_redirect_to_dashboard_after_login(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
         $response->assertRedirect(RouteServiceProvider::HOME);
     }
 

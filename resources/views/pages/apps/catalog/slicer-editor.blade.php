@@ -1,7 +1,7 @@
 <x-default-layout>
 
     @section('title')
-        Slicer (Shoppable) Editor - {{ $pdf->title }}
+        Slicer Editor
     @endsection
 
     @section('breadcrumbs')
@@ -31,6 +31,12 @@
 
         .hotspot-list .list-group-item {
             cursor: pointer;
+        }
+
+        .hotspot-list .list-group-item.active {
+            border-color: var(--bs-primary);
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            color: var(--bs-gray-900);
         }
 
         #thumbnailPreview {
@@ -63,34 +69,77 @@
         }
     </style>
 
-    <div class="d-flex flex-wrap flex-stack mb-6">
-        <div class="d-flex gap-2 ms-auto">
-            <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light btn-active-light-primary">Back</a>
-            <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}" class="btn btn-light-primary">Shoppable Preview</a>
-            <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
-                @csrf
-                <button type="submit" class="btn btn-light-success">Generate Page Images</button>
-            </form>
+    <div class="card border-0 shadow-sm overflow-hidden mb-8">
+        <div class="card-body p-0">
+            <div class="p-10 p-lg-15" style="background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);">
+                <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center">
+                    <div class="mw-500px">
+                        <span class="badge badge-light-primary mb-4">Slicer</span>
+                        <h1 class="text-white fw-bold mb-4">Build hotspots for {{ $pdf->title }}</h1>
+                        <div class="text-white opacity-75 fs-5">
+                            This screen is for interactive and shoppable hotspots only. Choose the page, draw the
+                            hotspot, and save the action data. It uses the same PDF pages managed in Page Management.
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light">Back</a>
+                        <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}"
+                            class="btn btn-light-primary">Shoppable Preview</a>
+                        <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
+                            @csrf
+                            <button type="submit" class="btn btn-light-success">Generate Page Images</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+        <div class="alert alert-success d-flex align-items-start gap-3 mb-8">
+            <i class="ki-outline ki-check-circle fs-2 text-success mt-1"></i>
+            <div>{{ session('success') }}</div>
+        </div>
     @endif
 
-    <div class="alert alert-secondary">
-        <div class="fw-semibold mb-1">Process</div>
-        <div class="text-gray-700">PDF → Images → Clickable areas → Shoppable (Turn.js).</div>
-        <div class="text-muted mt-2">
-            Note: Server-side image generation uses Spatie PDF-to-Image (requires PHP Imagick + Ghostscript). If not
-            available,
-            the editor will fall back to client-side rendering via PDF.js.
+    <div class="row g-6 g-xl-8 mb-8">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted fs-7 fw-semibold mb-2">Current function</div>
+                    <div class="fw-bold text-gray-900 fs-3">Slicer</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted fs-7 fw-semibold mb-2">Pages</div>
+                    <div class="fw-bold text-gray-900 fs-3">{{ $pages->count() }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted fs-7 fw-semibold mb-2">Visibility</div>
+                    <div class="fw-bold text-gray-900 fs-3 text-capitalize">{{ $pdf->visibility }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted fs-7 fw-semibold mb-2">Source file</div>
+                    <div class="fw-bold text-gray-900 fs-6">{{ $pdf->original_filename ?: 'Uploaded PDF' }}</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="row g-5">
         <div class="col-lg-8">
-            <div class="card shadow-sm">
+            <div class="card border-0 shadow-sm">
                 <div class="card-header">
                     <div class="card-title d-flex align-items-center gap-3 flex-wrap">
                         <div class="d-flex align-items-center gap-2">
@@ -106,6 +155,8 @@
 
                         <div class="slicer-canvas-toolbar">
                             <span class="text-muted fw-semibold">Tool</span>
+                            <button type="button" class="btn btn-sm btn-light" data-tool="select"
+                                id="toolSelect">Select</button>
                             <button type="button" class="btn btn-sm btn-light" data-tool="rectangle"
                                 id="toolRect">Rectangle</button>
                             <button type="button" class="btn btn-sm btn-light" data-tool="polygon"
@@ -160,18 +211,11 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card shadow-sm mb-5">
+            <div class="card border-0 shadow-sm mb-5">
                 <div class="card-header">
                     <div class="card-title">Hotspot Details</div>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-light mb-4">
-                        <div class="fw-semibold">Step 1</div>
-                        <div class="text-muted">Choose a tool and draw on the page.</div>
-                        <div class="fw-semibold mt-3">Step 2</div>
-                        <div class="text-muted">Select an action type and enter details.</div>
-                    </div>
-
                     <form id="hotspotForm">
                         @csrf
                         <input type="hidden" id="hotspotId" value="">
@@ -184,7 +228,8 @@
 
                         <div class="mb-4">
                             <label class="form-label">Action</label>
-                            <select class="form-select" name="action_type" id="actionType">
+                            <select class="form-select" name="action_type" id="actionType" data-control="select2"
+                                data-hide-search="true">
                                 @foreach ($actionOptions as $k => $label)
                                     <option value="{{ $k }}">{{ $label }}</option>
                                 @endforeach
@@ -267,7 +312,7 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm">
+            <div class="card border-0 shadow-sm">
                 <div class="card-header">
                     <div class="card-title">Hotspots on Page</div>
                 </div>

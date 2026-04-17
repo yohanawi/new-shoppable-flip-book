@@ -183,7 +183,7 @@
                 <div class="modal-header border-0 pb-0"
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px;">
                     <h2 class="fw-bold text-white mb-0" id="modalProductTitle"
-                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">  Details</h2>
+                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);"> Details</h2>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body pt-6 pb-8 px-10">
@@ -277,6 +277,8 @@
             const pdfUrl = @json($pdfUrl);
             const pages = @json($pages);
             const hotspots = @json($hotspots);
+            const trackUrl = @json(route('catalog.pdfs.analytics.track', $pdf));
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             if (window.pdfjsLib) {
                 window.pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -290,6 +292,144 @@
             const mediaBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/hotspots'));
 
             let $flipbook;
+
+            function createAnalyticsTracker(resolvePageNumber) {
+                let isStarted = false;
+                let activeSince = null;
+                let heartbeatId = null;
+                let isDestroyed = false;
+
+                function send(eventType, payload = {}, keepalive = false) {
+                    try {
+                        fetch(trackUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                event_type: eventType,
+                                ...payload,
+                            }),
+                            keepalive,
+                        }).catch(() => {});
+                    } catch (error) {}
+                }
+
+                function flushReadingTime(reason) {
+                    if (activeSince === null) {
+                        return;
+                    }
+
+                    const durationMs = Math.max(0, Math.min(Date.now() - activeSince, 600000));
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    if (durationMs < 1000) {
+                        return;
+                    }
+
+                    send('reading_time', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            duration_ms: durationMs,
+                            reason,
+                        },
+                    }, true);
+                }
+
+                function start() {
+                    if (isStarted) {
+                        return;
+                    }
+
+                    isStarted = true;
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    send('book_open', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source: 'share',
+                        },
+                    });
+
+                    send('page_view', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source: 'initial',
+                        },
+                    });
+
+                    heartbeatId = window.setInterval(() => flushReadingTime('heartbeat'), 15000);
+                }
+
+                function pageView(source = 'turn') {
+                    if (!isStarted) {
+                        return;
+                    }
+
+                    flushReadingTime('page_change');
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    send('page_view', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source,
+                        },
+                    });
+                }
+
+                function hotspotClick(hotspotId, pageNumber) {
+                    send('hotspot_click', {
+                        page_number: pageNumber || resolvePageNumber(),
+                        hotspot_id: hotspotId,
+                    });
+                }
+
+                function destroy() {
+                    if (!isStarted || isDestroyed) {
+                        return;
+                    }
+
+                    isDestroyed = true;
+                    flushReadingTime('unload');
+
+                    if (heartbeatId !== null) {
+                        window.clearInterval(heartbeatId);
+                    }
+                }
+
+                document.addEventListener('visibilitychange', () => {
+                    if (!isStarted) {
+                        return;
+                    }
+
+                    if (document.visibilityState === 'hidden') {
+                        flushReadingTime('hidden');
+                        return;
+                    }
+
+                    activeSince = Date.now();
+                });
+
+                window.addEventListener('pagehide', destroy);
+                window.addEventListener('beforeunload', destroy);
+
+                return {
+                    start,
+                    pageView,
+                    hotspotClick,
+                };
+            }
+
+            const analytics = createAnalyticsTracker(() => {
+                if (!$flipbook) {
+                    return Number(pages[0]?.page_number || 1);
+                }
+
+                const turnPage = $flipbook.turn('page');
+                return Number(pages[turnPage - 1]?.page_number || pages[0]?.page_number || 1);
+            });
 
             const hotspotByPageId = {};
             for (const h of hotspots) {
@@ -341,7 +481,10 @@
                         hs.style.top = ((h.y || 0) * 100) + '%';
                         hs.style.width = ((h.w || 0) * 100) + '%';
                         hs.style.height = ((h.h || 0) * 100) + '%';
-                        hs.addEventListener('click', () => handleAction(h));
+                        hs.addEventListener('click', () => {
+                            analytics.hotspotClick(h.id, Number(p.page_number));
+                            handleAction(h);
+                        });
                         inner.appendChild(hs);
                     }
 
@@ -399,23 +542,23 @@
 
             function handleAction(h) {
                 if (h.action_type === 'internal_page') {
-                    const targetIdx = pageIndexForPageNumber(h.target_page_number);
+                    const targetIdx = pageIndexForPageNumber(h.internal_page_number);
                     if (targetIdx && $flipbook) {
                         $flipbook.turn('page', targetIdx);
                     }
                 }
 
                 if (h.action_type === 'external_link') {
-                    if (h.link_url) window.open(h.link_url, '_blank');
+                    if (h.link) window.open(h.link, '_blank');
                 }
 
                 if (h.action_type === 'popup_window') {
-                    document.getElementById('modalProductTitle').textContent = h.link_text || h.product_name ||
+                    document.getElementById('modalProductTitle').textContent = h.title ||
                         'Product';
-                    document.getElementById('modalProductName').textContent = h.product_name || '';
-                    document.getElementById('modalProductDesc').textContent = h.product_description || '';
-                    document.getElementById('modalProductPrice').textContent = h.product_price || '';
-                    document.getElementById('modalProductLink').href = h.link_url || '#';
+                    document.getElementById('modalProductName').textContent = h.title || '';
+                    document.getElementById('modalProductDesc').textContent = h.description || '';
+                    document.getElementById('modalProductPrice').textContent = h.price || '';
+                    document.getElementById('modalProductLink').href = h.link || '#';
 
                     if (h.thumbnail_path) {
                         document.getElementById('modalProductThumbWrapper').style.display = 'block';
@@ -524,9 +667,11 @@
 
                     $flipbook.bind('turned', function() {
                         updatePageInfo();
+                        analytics.pageView('turn');
                     });
 
                     updatePageInfo();
+                    analytics.start();
 
                     document.getElementById('btnPrev').addEventListener('click', () => $flipbook.turn('previous'));
                     document.getElementById('btnNext').addEventListener('click', () => $flipbook.turn('next'));

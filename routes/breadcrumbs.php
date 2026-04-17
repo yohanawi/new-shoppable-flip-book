@@ -16,6 +16,32 @@ Breadcrumbs::for('dashboard', function (BreadcrumbTrail $trail) {
     $trail->push('Dashboard', route('dashboard'));
 });
 
+// Home > Dashboard > Analytics
+Breadcrumbs::for('analytics.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Analytics', route('analytics.index'));
+});
+
+Breadcrumbs::for('billing.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Billing', route('billing.index'));
+});
+
+Breadcrumbs::for('admin.billing.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Billing Dashboard', route('admin.billing.index'));
+});
+
+Breadcrumbs::for('notifications.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Notifications', route('notifications.index'));
+});
+
+Breadcrumbs::for('admin.notifications.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Notification Audit', route('admin.notifications.index'));
+});
+
 // Home > Dashboard > User Management
 Breadcrumbs::for('user-management.index', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
@@ -50,6 +76,18 @@ Breadcrumbs::for('user-management.roles.show', function (BreadcrumbTrail $trail,
 Breadcrumbs::for('user-management.permissions.index', function (BreadcrumbTrail $trail) {
     $trail->parent('user-management.index');
     $trail->push('Permissions', route('user-management.permissions.index'));
+});
+
+// Home > Dashboard > Account Settings
+Breadcrumbs::for('user-management.users.settings', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Account Settings', route('account.settings'));
+});
+
+// Home > Dashboard > Account Profile
+Breadcrumbs::for('user-management.users.profile', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('My Profile', route('account.profile'));
 });
 
 // Home > Dashboard > Tickets

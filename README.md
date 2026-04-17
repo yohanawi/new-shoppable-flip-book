@@ -7,6 +7,16 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Flipbook Billing Setup
+
+This project now includes a billing module built on Laravel Cashier, Stripe, and Spatie Permission.
+
+1. Set the Stripe keys in `.env`: `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`.
+2. Set the Stripe price and product IDs used by the seeded plans: `STRIPE_BASIC_PRICE_ID`, `STRIPE_BASIC_PRODUCT_ID`, `STRIPE_PRO_PRICE_ID`, `STRIPE_PRO_PRODUCT_ID`.
+3. Run `php artisan migrate --seed`.
+4. Register the Stripe webhook endpoint at `/stripe/webhook`.
+5. Use `/billing` for customer billing and `/admin/billing` for the admin billing dashboard.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

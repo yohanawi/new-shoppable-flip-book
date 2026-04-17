@@ -1,0 +1,23 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - heading "test 02" [level=1] [ref=e5]
+        - generic [ref=e6]:
+          - generic [ref=e7]: public
+          - generic [ref=e8]: Shared PDF
+          - generic [ref=e9]: Page Management + Flip Physics + Slicer
+          - generic [ref=e10]: Loading...
+      - generic [ref=e11]:
+        - button " Previous" [ref=e12] [cursor=pointer]:
+          - generic [ref=e13]: 
+          - text: Previous
+        - button "Next " [ref=e14] [cursor=pointer]:
+          - text: Next
+          - generic [ref=e15]: 
+        - link " Download PDF" [ref=e16] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/catalog/pdfs/8/download
+          - generic [ref=e17]: 
+          - text: Download PDF
+    - generic [ref=e19]: Loading shared PDF...
+  - text: 

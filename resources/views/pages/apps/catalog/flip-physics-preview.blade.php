@@ -136,7 +136,7 @@
                     <p class="text-muted">Share this link to allow others to view the flipbook:</p>
                     <div class="share-link-container">
                         <input type="text" class="form-control" id="shareLink" readonly
-                            value="{{ route('catalog.pdfs.flip-physics.share', $pdf) }}">
+                            value="{{ route('catalog.pdfs.share', $pdf) }}">
                         <button type="button" class="btn btn-primary" id="btnCopyLink">
                             <i class="bi bi-clipboard"></i> Copy
                         </button>
@@ -155,15 +155,7 @@
         <script>
             (function() {
                 const pdfUrl = @json($pdfUrl);
-
-                $settings = [
-                    'duration' => $setting - > duration_ms,
-                    'gradients' => $setting - > gradients,
-                    'acceleration' => $setting - > acceleration,
-                    'elevation' => $setting - > elevation,
-                    'displayMode' => $setting - > display_mode,
-                    'renderScale' => $setting - > render_scale_percent / 100,
-                ];
+                const settings = @json($viewerSettings);
 
                 const statusEl = document.getElementById('status');
                 const flipbookEl = document.getElementById('flipbook');
@@ -171,6 +163,8 @@
 
                 let isFullscreen = false;
                 let $flipbook;
+                let keyboardBound = false;
+                let resizeTimer = null;
 
                 // Configure PDF.js worker
                 if (window.pdfjsLib) {
@@ -216,8 +210,8 @@
                 }
 
                 async function renderAll() {
-                    if (!window.jQuery || !window.jQuery.fn || typeof window.jQuery.fn.turn !== 'function') {
-                        setStatus('Turn.js failed to load.');
+                    if (!window.pdfjsLib) {
+                        setStatus('PDF.js failed to load.');
                         return;
                     }
 
@@ -287,6 +281,13 @@
 
                     setStatus('Ready');
 
+                    if (!window.jQuery || !window.jQuery.fn || typeof window.jQuery.fn.turn !== 'function') {
+                        flipbookEl.style.width = w + 'px';
+                        flipbookEl.style.height = 'auto';
+                        setStatus('Turn.js failed to load. Showing a static preview.');
+                        return;
+                    }
+
                     $flipbook = $('#flipbook');
                     flipbookEl.style.width = (display === 'double' ? w * 2 : w) + 'px';
                     flipbookEl.style.height = h + 'px';
@@ -311,11 +312,26 @@
                     document.getElementById('btnPrev').onclick = () => $flipbook.turn('previous');
                     document.getElementById('btnNext').onclick = () => $flipbook.turn('next');
 
-                    window.addEventListener('keydown', (e) => {
-                        if (e.key === 'ArrowLeft') $flipbook.turn('previous');
-                        if (e.key === 'ArrowRight') $flipbook.turn('next');
-                        if (e.key === 'Escape' && isFullscreen) exitFullscreen();
-                    });
+                    if (!keyboardBound) {
+                        window.addEventListener('keydown', (e) => {
+                            if (!$flipbook) {
+                                return;
+                            }
+
+                            if (e.key === 'ArrowLeft') {
+                                $flipbook.turn('previous');
+                            }
+
+                            if (e.key === 'ArrowRight') {
+                                $flipbook.turn('next');
+                            }
+
+                            if (e.key === 'Escape' && isFullscreen) {
+                                exitFullscreen();
+                            }
+                        });
+                        keyboardBound = true;
+                    }
                 }
 
                 // Fullscreen functionality
@@ -405,6 +421,10 @@
                 });
 
                 document.getElementById('btnFullscreen').addEventListener('click', enterFullscreen);
+                window.addEventListener('resize', () => {
+                    window.clearTimeout(resizeTimer);
+                    resizeTimer = window.setTimeout(() => renderAll(), 120);
+                });
 
                 // Initial render
                 renderAll();

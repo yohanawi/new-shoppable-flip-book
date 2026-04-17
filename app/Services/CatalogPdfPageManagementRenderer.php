@@ -10,16 +10,17 @@ use setasign\Fpdi\Tcpdf\Fpdi;
 
 class CatalogPdfPageManagementRenderer
 {
+    public function forgetRenderedFiles(CatalogPdf $pdf): void
+    {
+        Storage::disk('local')->deleteDirectory("catalog-managed/{$pdf->id}");
+    }
+
     /**
      * Returns an absolute filesystem path to a rendered PDF.
-     * For non page-management templates, returns the original file path.
+     * If no page-management data exists yet, returns the original file path.
      */
     public function renderPath(CatalogPdf $pdf): string
     {
-        if ($pdf->template_type !== CatalogPdf::TEMPLATE_PAGE_MANAGEMENT) {
-            return $pdf->storagePath();
-        }
-
         $disk = Storage::disk($pdf->storage_disk);
         if (!$disk->exists($pdf->pdf_path)) {
             abort(404);
@@ -35,14 +36,23 @@ class CatalogPdfPageManagementRenderer
             return $pdf->storagePath();
         }
 
-        $revision = implode('|', [
-            $pdf->pdf_path,
-            (string) optional($pdf->updated_at)->getTimestamp(),
-            (string) ($pages->max('updated_at')?->getTimestamp() ?? 0),
-            (string) $pages->count(),
-        ]);
+        $revision = [
+            'pdf_path' => $pdf->pdf_path,
+            'pdf_updated_at' => optional($pdf->updated_at)?->format('U.u'),
+            'pages' => $pages->map(function ($page) {
+                return [
+                    'id' => (int) $page->id,
+                    'page_number' => (int) $page->page_number,
+                    'display_order' => (int) $page->display_order,
+                    'title' => (string) ($page->title ?? ''),
+                    'is_hidden' => (bool) $page->is_hidden,
+                    'is_locked' => (bool) $page->is_locked,
+                    'updated_at' => optional($page->updated_at)?->format('U.u'),
+                ];
+            })->values()->all(),
+        ];
 
-        $hash = substr(sha1($revision), 0, 16);
+        $hash = substr(sha1(json_encode($revision, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), 0, 16);
         $managedRelativePath = "catalog-managed/{$pdf->id}/managed-{$hash}.pdf";
 
         // Always store generated PDFs on local disk
@@ -69,6 +79,10 @@ class CatalogPdfPageManagementRenderer
 
                 $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
                 $fpdi->useTemplate($tplId);
+
+                if (filled($page->title)) {
+                    $fpdi->Bookmark($page->title, 0, 0);
+                }
             }
 
             $fpdi->Output($outputPath, 'F');

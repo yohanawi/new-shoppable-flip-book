@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $pdf->title }} - Flip Physics Flipbook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -119,20 +120,145 @@
     <script>
         (function() {
             const pdfUrl = @json($pdfUrl);
-            $settings = [
-                'duration' => $setting - > duration_ms,
-                'gradients' => $setting - > gradients,
-                'acceleration' => $setting - > acceleration,
-                'elevation' => $setting - > elevation,
-                'displayMode' => $setting - > display_mode,
-                'renderScale' => $setting - > render_scale_percent / 100,
-            ];
+            const settings = @json($viewerSettings);
+            const trackUrl = @json(route('catalog.pdfs.analytics.track', $pdf));
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             const flipbookEl = document.getElementById('flipbook');
             const pageInfoEl = document.getElementById('pageInfo');
             const loadingMessageEl = document.getElementById('loadingMessage');
 
             let $flipbook;
+            let resizeTimer = null;
+
+            function createAnalyticsTracker(resolvePageNumber) {
+                let isStarted = false;
+                let activeSince = null;
+                let heartbeatId = null;
+                let isDestroyed = false;
+
+                function send(eventType, payload = {}, keepalive = false) {
+                    try {
+                        fetch(trackUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                event_type: eventType,
+                                ...payload,
+                            }),
+                            keepalive,
+                        }).catch(() => {});
+                    } catch (error) {}
+                }
+
+                function flushReadingTime(reason) {
+                    if (activeSince === null) {
+                        return;
+                    }
+
+                    const durationMs = Math.max(0, Math.min(Date.now() - activeSince, 600000));
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    if (durationMs < 1000) {
+                        return;
+                    }
+
+                    send('reading_time', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            duration_ms: durationMs,
+                            reason,
+                        },
+                    }, true);
+                }
+
+                function start() {
+                    if (isStarted) {
+                        return;
+                    }
+
+                    isStarted = true;
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    send('book_open', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source: 'share',
+                        },
+                    });
+
+                    send('page_view', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source: 'initial',
+                        },
+                    });
+
+                    heartbeatId = window.setInterval(() => flushReadingTime('heartbeat'), 15000);
+                }
+
+                function pageView(source = 'turn') {
+                    if (!isStarted) {
+                        return;
+                    }
+
+                    flushReadingTime('page_change');
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    send('page_view', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source,
+                        },
+                    });
+                }
+
+                function destroy() {
+                    if (!isStarted || isDestroyed) {
+                        return;
+                    }
+
+                    isDestroyed = true;
+                    flushReadingTime('unload');
+
+                    if (heartbeatId !== null) {
+                        window.clearInterval(heartbeatId);
+                    }
+                }
+
+                document.addEventListener('visibilitychange', () => {
+                    if (!isStarted) {
+                        return;
+                    }
+
+                    if (document.visibilityState === 'hidden') {
+                        flushReadingTime('hidden');
+                        return;
+                    }
+
+                    activeSince = Date.now();
+                });
+
+                window.addEventListener('pagehide', destroy);
+                window.addEventListener('beforeunload', destroy);
+
+                return {
+                    start,
+                    pageView,
+                };
+            }
+
+            const analytics = createAnalyticsTracker(() => {
+                if (!$flipbook) {
+                    return 1;
+                }
+
+                return Number($flipbook.turn('page') || 1);
+            });
 
             // Configure PDF.js worker
             if (window.pdfjsLib) {
@@ -164,6 +290,15 @@
                 }
             }
 
+            function destroyTurnIfExists() {
+                try {
+                    const $fb = $('#flipbook');
+                    if ($fb.data('turn')) {
+                        $fb.turn('destroy');
+                    }
+                } catch (e) {}
+            }
+
             function computeTurnSize(pageViewport) {
                 const containerWidth = Math.min(window.innerWidth - 40, 1400);
                 const containerHeight = window.innerHeight - 120;
@@ -189,6 +324,11 @@
             }
 
             async function render() {
+                if (!window.pdfjsLib) {
+                    loadingMessageEl.textContent = 'PDF.js failed to load.';
+                    return;
+                }
+
                 let pdf;
                 try {
                     pdf = await window.pdfjsLib.getDocument(pdfUrl).promise;
@@ -206,10 +346,12 @@
                 }
 
                 if (!window.jQuery || !window.jQuery.fn || typeof window.jQuery.fn.turn !== 'function') {
-                    loadingMessageEl.textContent = 'Turn.js failed to load.';
+                    loadingMessageEl.textContent = 'Turn.js failed to load. Showing a static preview.';
+                    loadingMessageEl.style.display = 'block';
                     return;
                 }
 
+                destroyTurnIfExists();
                 buildPageShells(pageCount);
 
                 // Use first page to compute sizing
@@ -265,9 +407,11 @@
                     // Update page info on turn
                     $flipbook.bind('turned', function(event, page) {
                         updatePageInfo();
+                        analytics.pageView('turn');
                     });
 
                     updatePageInfo();
+                    analytics.start();
 
                     document.getElementById('btnPrev').addEventListener('click', () => $flipbook.turn('previous'));
                     document.getElementById('btnNext').addEventListener('click', () => $flipbook.turn('next'));
@@ -283,6 +427,10 @@
                 }
             }
 
+            window.addEventListener('resize', () => {
+                window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(() => render(), 120);
+            });
             render();
         })();
     </script>

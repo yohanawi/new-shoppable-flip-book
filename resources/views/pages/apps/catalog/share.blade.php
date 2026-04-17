@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $pdf->title }} - Shared PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --share-bg-top: #08111f;
+            --share-bg-bottom: #133a66;
+            --share-panel-border: rgba(255, 255, 255, 0.12);
+            --share-text: #eef4ff;
+            --share-muted: rgba(238, 244, 255, 0.72);
+            --share-accent: #6ee7f2;
+            --share-accent-strong: #25b8cf;
+            --share-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background:
+                radial-gradient(circle at top left, rgba(110, 231, 242, 0.14), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.18), transparent 28%),
+                linear-gradient(160deg, var(--share-bg-top) 0%, var(--share-bg-bottom) 100%);
+            color: var(--share-text);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .share-shell {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .share-shell::before,
+        .share-shell::after {
+            content: '';
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+            filter: blur(40px);
+            opacity: 0.45;
+        }
+
+        .share-shell::before {
+            inset: 80px auto auto 5%;
+            width: 260px;
+            height: 260px;
+            background: rgba(110, 231, 242, 0.24);
+        }
+
+        .share-shell::after {
+            inset: auto 4% 70px auto;
+            width: 320px;
+            height: 320px;
+            background: rgba(37, 99, 235, 0.24);
+        }
+
+        .share-toolbar {
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.86), rgba(2, 6, 23, 0.55));
+            backdrop-filter: blur(16px);
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--share-text);
+            gap: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .share-title {
+            font-size: clamp(20px, 2vw, 28px);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin: 0;
+        }
+
+        .share-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .share-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--share-text);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .share-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 34px 34px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .share-stage {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            position: relative;
+        }
+
+        .share-book-area {
+            flex: 1;
+            min-width: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .share-book-frame {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #flipbook {
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        #flipbook .page {
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+            border-radius: 14px;
+        }
+
+        .page-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            touch-action: pan-y;
+        }
+
+        .page-inner.is-dragging {
+            cursor: grabbing;
+        }
+
+        .page-inner img,
+        .page-inner canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .hotspot {
+            position: absolute;
+            border: 2px solid rgba(37, 99, 235, 0.85);
+            background: rgba(37, 99, 235, 0.14);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .hotspot:hover {
+            background: rgba(37, 99, 235, 0.25);
+            transform: scale(1.02);
+        }
+
+        .share-side-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 68px;
+            height: 68px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(5, 12, 24, 0.72);
+            color: var(--share-text);
+            backdrop-filter: blur(12px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+            z-index: 3;
+        }
+
+        .share-side-button:hover {
+            transform: translateY(-50%) scale(1.04);
+            background: rgba(14, 24, 44, 0.84);
+            border-color: rgba(110, 231, 242, 0.4);
+        }
+
+        .share-side-button:active {
+            transform: translateY(-50%) scale(0.98);
+        }
+
+        .share-side-button-prev {
+            left: 12px;
+        }
+
+        .share-side-button-next {
+            right: 12px;
+        }
+
+        .share-side-button-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--share-muted);
+        }
+
+        .loading-message {
+            color: var(--share-text);
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4;
+            background: rgba(3, 8, 18, 0.24);
+            backdrop-filter: blur(6px);
+        }
+
+        .share-hint {
+            position: absolute;
+            left: 50%;
+            bottom: 8px;
+            transform: translateX(-50%);
+            color: var(--share-muted);
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            z-index: 3;
+            text-align: center;
+        }
+
+        .share-hint strong {
+            color: var(--share-text);
+            font-weight: 700;
+        }
+
+        @media (max-width: 991.98px) {
+            .share-content {
+                padding: 18px 16px 20px;
+            }
+
+            .share-stage {
+                padding: 14px 12px 18px;
+            }
+
+            .share-book-area {
+                padding: 12px 0 56px;
+            }
+
+            .share-side-button {
+                top: auto;
+                bottom: 0;
+                transform: none;
+                width: 60px;
+                height: 60px;
+            }
+
+            .share-side-button:hover,
+            .share-side-button:active {
+                transform: scale(1.02);
+            }
+
+            .share-side-button-prev {
+                left: calc(50% - 76px);
+            }
+
+            .share-side-button-next {
+                right: calc(50% - 76px);
+            }
+
+            .share-side-button-label {
+                display: none;
+            }
+
+            .share-hint {
+                bottom: 68px;
+                font-size: 12px;
+                width: calc(100% - 32px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="share-shell">
+        <div class="share-toolbar">
+            <div>
+                <h1 class="share-title">{{ $pdf->title }}</h1>
+                <div class="share-meta">
+                    <span class="share-badge" id="pageInfo">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="share-content">
+            <div class="share-stage">
+                <button type="button" class="share-side-button share-side-button-prev" id="btnPrev"
+                    aria-label="Previous page">
+                    <i class="bi bi-chevron-left fs-1"></i>
+                    <span class="share-side-button-label">Previous</span>
+                </button>
+
+                <div class="share-book-area">
+                    <div class="share-book-frame">
+                        <div id="flipbook"></div>
+                        <div class="loading-message" id="loadingMessage">Loading shared PDF...</div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="share-side-button share-side-button-next" id="btnNext"
+                aria-label="Next page">
+                <i class="bi bi-chevron-right fs-1"></i>
+                <span class="share-side-button-label">Next</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalProduct" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered mw-700px">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="fw-bold mb-0" id="modalProductTitle">Details</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-6 pb-8 px-10">
+                    <div class="d-flex align-items-start gap-5 flex-column flex-md-row">
+                        <div class="flex-shrink-0" id="modalProductThumbWrapper" style="display:none;">
+                            <img id="modalProductThumb" src="" alt="" class="rounded-3"
+                                style="width: 180px; height: 180px; object-fit: cover;">
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fs-2 fw-bold mb-3" id="modalProductName"></div>
+                            <div class="fs-6 mb-5" id="modalProductDesc"></div>
+                            <div class="fs-2 fw-bold text-primary" id="modalProductPrice"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center pb-8">
+                    <a href="#" target="_blank" class="btn btn-primary px-12 py-3 fw-bold" id="modalProductLink">
+                        <i class="bi bi-cart3 me-2"></i> View Product
+                    </a>
+                    <button type="button" class="btn btn-light px-12 py-3 fw-bold"
+                        data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalImage" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content shadow-lg bg-black">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="fw-bold text-white mb-0" id="modalImageTitle">Image Preview</h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-8 text-center">
+                    <img id="modalImageEl" src="" alt="" class="rounded-3"
+                        style="max-width: 100%; max-height: 75vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalVideo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h2 class="fw-bold mb-0" id="modalVideoTitle">Video Player</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-8">
+                    <div id="modalVideoWrap" class="ratio ratio-16x9 rounded-3 overflow-hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/plugins/custom/turnjs/turn.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        (function() {
+            const pdfUrl = @json($pdfUrl);
+            let pages = @json($pages);
+            const hotspots = @json($hotspots);
+            const settings = @json($viewerSettings);
+            const trackUrl = @json(route('catalog.pdfs.analytics.track', $pdf));
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            if (window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+                    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+            }
+
+            const flipbookEl = document.getElementById('flipbook');
+            const pageInfoEl = document.getElementById('pageInfo');
+            const loadingMessageEl = document.getElementById('loadingMessage');
+            const bookFrameEl = document.querySelector('.share-book-frame');
+            const mediaBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/hotspots'));
+            const pageImageBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/pages'));
+
+            let $flipbook;
+            let dragStartX = null;
+            let dragPointerId = null;
+
+            const hotspotByPageId = {};
+            for (const hotspot of hotspots) {
+                const pageId = String(hotspot.catalog_pdf_page_id);
+                hotspotByPageId[pageId] = hotspotByPageId[pageId] || [];
+                hotspotByPageId[pageId].push(hotspot);
+            }
+
+            function sendAnalytics(eventType, payload = {}, keepalive = false) {
+                try {
+                    fetch(trackUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            event_type: eventType,
+                            ...payload,
+                        }),
+                        keepalive,
+                    }).catch(() => {});
+                } catch (error) {}
+            }
+
+            function updatePageInfo() {
+                if (!$flipbook) {
+                    pageInfoEl.textContent = 'Page 1';
+                    return;
+                }
+
+                const current = $flipbook.turn('page');
+                const total = $flipbook.turn('pages');
+                pageInfoEl.textContent = `Page ${current} of ${total}`;
+            }
+
+            function mediaUrl(id, kind) {
+                return mediaBase + '/' + id + '/media/' + kind;
+            }
+
+            function normalizePagesForRendering(pdf) {
+                const totalPages = pdf.numPages || 0;
+
+                if (!Array.isArray(pages) || pages.length === 0) {
+                    pages = [];
+                    for (let index = 1; index <= totalPages; index++) {
+                        pages.push({
+                            id: null,
+                            page_number: index,
+                            render_page_number: index,
+                            display_order: index,
+                            title: 'Page ' + index,
+                            image_path: null,
+                        });
+                    }
+
+                    return;
+                }
+
+                pages = pages
+                    .map((page, index) => ({
+                        ...page,
+                        render_page_number: index + 1,
+                    }))
+                    .filter((page) => page.render_page_number <= totalPages);
+            }
+
+            function pageIndexForPageNumber(pageNumber) {
+                const index = pages.findIndex((page) => Number(page.page_number) === Number(pageNumber));
+                return index >= 0 ? index + 1 : null;
+            }
+
+            function showModal(modalId) {
+                const element = document.getElementById(modalId);
+                if (!element || !window.bootstrap) {
+                    return;
+                }
+
+                new window.bootstrap.Modal(element).show();
+            }
+
+            function handleAction(hotspot) {
+                sendAnalytics('hotspot_click', {
+                    page_number: hotspot.internal_page_number || pages[0]?.page_number || 1,
+                    hotspot_id: hotspot.id,
+                });
+
+                if (hotspot.action_type === 'internal_page') {
+                    const targetIndex = pageIndexForPageNumber(hotspot.internal_page_number);
+                    if (targetIndex && $flipbook) {
+                        $flipbook.turn('page', targetIndex);
+                    }
+                    return;
+                }
+
+                if (hotspot.action_type === 'external_link') {
+                    if (hotspot.link) {
+                        window.open(hotspot.link, '_blank');
+                    }
+                    return;
+                }
+
+                if (hotspot.action_type === 'popup_window') {
+                    document.getElementById('modalProductTitle').textContent = hotspot.title || 'Details';
+                    document.getElementById('modalProductName').textContent = hotspot.title || '';
+                    document.getElementById('modalProductDesc').textContent = hotspot.description || '';
+                    document.getElementById('modalProductPrice').textContent = hotspot.price || '';
+
+                    const productLink = document.getElementById('modalProductLink');
+                    productLink.href = hotspot.link || '#';
+                    productLink.style.display = hotspot.link ? '' : 'none';
+
+                    const thumbWrapper = document.getElementById('modalProductThumbWrapper');
+                    const thumb = document.getElementById('modalProductThumb');
+                    if (hotspot.thumbnail_path) {
+                        thumb.src = mediaUrl(hotspot.id, 'thumbnail');
+                        thumbWrapper.style.display = '';
+                    } else {
+                        thumbWrapper.style.display = 'none';
+                    }
+
+                    showModal('modalProduct');
+                    return;
+                }
+
+                if (hotspot.action_type === 'popup_image') {
+                    document.getElementById('modalImageTitle').textContent = hotspot.title || 'Image Preview';
+                    document.getElementById('modalImageEl').src = mediaUrl(hotspot.id, 'popup_image');
+                    showModal('modalImage');
+                    return;
+                }
+
+                if (hotspot.action_type === 'popup_video') {
+                    document.getElementById('modalVideoTitle').textContent = hotspot.title || 'Video Player';
+                    const wrap = document.getElementById('modalVideoWrap');
+                    wrap.innerHTML = '';
+
+                    if (hotspot.popup_video_url) {
+                        wrap.innerHTML =
+                            `<iframe src="${hotspot.popup_video_url}" frameborder="0" allow="autoplay; fullscreen" allowfullscreen class="w-100 h-100"></iframe>`;
+                    } else if (hotspot.popup_video_path) {
+                        wrap.innerHTML =
+                            `<video controls class="w-100 h-100"><source src="${mediaUrl(hotspot.id, 'popup_video')}" type="video/mp4">Your browser does not support video.</video>`;
+                    }
+
+                    showModal('modalVideo');
+                }
+            }
+
+            function releaseDrag(inner) {
+                dragStartX = null;
+                dragPointerId = null;
+                inner.classList.remove('is-dragging');
+            }
+
+            function bindDragFlip() {
+                const dragThreshold = 80;
+                const pageInners = flipbookEl.querySelectorAll('.page-inner');
+
+                for (const inner of pageInners) {
+                    inner.addEventListener('pointerdown', (event) => {
+                        if (event.button !== 0 || event.target.closest('.hotspot')) {
+                            return;
+                        }
+
+                        dragStartX = event.clientX;
+                        dragPointerId = event.pointerId;
+                        inner.classList.add('is-dragging');
+
+                        if (typeof inner.setPointerCapture === 'function') {
+                            inner.setPointerCapture(event.pointerId);
+                        }
+                    });
+
+                    inner.addEventListener('pointerup', (event) => {
+                        if (dragPointerId !== event.pointerId || dragStartX === null || event.target.closest(
+                                '.hotspot')) {
+                            return;
+                        }
+
+                        const deltaX = event.clientX - dragStartX;
+                        if ($flipbook && Math.abs(deltaX) >= dragThreshold) {
+                            $flipbook.turn(deltaX < 0 ? 'next' : 'previous');
+                        }
+
+                        if (typeof inner.releasePointerCapture === 'function' && inner.hasPointerCapture?.(event
+                                .pointerId)) {
+                            inner.releasePointerCapture(event.pointerId);
+                        }
+
+                        releaseDrag(inner);
+                    });
+
+                    inner.addEventListener('pointercancel', (event) => {
+                        if (typeof inner.releasePointerCapture === 'function' && inner.hasPointerCapture?.(event
+                                .pointerId)) {
+                            inner.releasePointerCapture(event.pointerId);
+                        }
+
+                        releaseDrag(inner);
+                    });
+                }
+            }
+
+            function buildPageShells() {
+                flipbookEl.innerHTML = '';
+
+                for (const page of pages) {
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page';
+                    pageDiv.dataset.pageId = String(page.id || '');
+                    pageDiv.dataset.pageNumber = String(page.page_number);
+
+                    const inner = document.createElement('div');
+                    inner.className = 'page-inner';
+
+                    if (page.id && page.image_path) {
+                        const img = document.createElement('img');
+                        img.src = pageImageBase + '/' + page.id + '/image';
+                        img.alt = page.title || ('Page ' + page.page_number);
+                        inner.appendChild(img);
+                    } else {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 10;
+                        canvas.height = 10;
+                        inner.appendChild(canvas);
+                    }
+
+                    const pageHotspots = hotspotByPageId[String(page.id)] || [];
+                    for (const hotspot of pageHotspots) {
+                        const hotspotEl = document.createElement('div');
+                        hotspotEl.className = 'hotspot';
+                        hotspotEl.style.left = (hotspot.x * 100) + '%';
+                        hotspotEl.style.top = (hotspot.y * 100) + '%';
+                        hotspotEl.style.width = (hotspot.w * 100) + '%';
+                        hotspotEl.style.height = (hotspot.h * 100) + '%';
+                        if (hotspot.color) {
+                            hotspotEl.style.borderColor = hotspot.color;
+                        }
+                        hotspotEl.title = hotspot.title || hotspot.action_type;
+                        hotspotEl.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleAction(hotspot);
+                        });
+                        inner.appendChild(hotspotEl);
+                    }
+
+                    pageDiv.appendChild(inner);
+                    flipbookEl.appendChild(pageDiv);
+                }
+
+                bindDragFlip();
+            }
+
+            function computeTurnSize(viewport) {
+                const frameRect = bookFrameEl?.getBoundingClientRect();
+                const frameWidth = Math.max((frameRect?.width || window.innerWidth) - 56, 280);
+                const frameHeight = Math.max((frameRect?.height || window.innerHeight) - 56, 280);
+                const isMobile = window.innerWidth < 992;
+                const display = settings.displayMode === 'auto' ?
+                    (isMobile ? 'single' : 'double') :
+                    settings.displayMode;
+                const visibleSpreadWidth = display === 'double' ? frameWidth / 2 : frameWidth;
+                const scaleWidth = visibleSpreadWidth / viewport.width;
+                const scaleHeight = frameHeight / viewport.height;
+                const baseScale = Math.min(scaleWidth, scaleHeight);
+                const preferredScale = baseScale * Math.max(Number(settings.renderScale) || 1, 1);
+                const scale = Math.min(preferredScale, baseScale);
+
+                return {
+                    w: Math.floor(viewport.width * scale),
+                    h: Math.floor(viewport.height * scale),
+                    display,
+                    scale,
+                };
+            }
+
+            async function renderMissingCanvases(pdf, sizing) {
+                const pageDivs = flipbookEl.querySelectorAll('.page');
+
+                for (let index = 0; index < pages.length; index++) {
+                    const page = pages[index];
+                    if (page.id && page.image_path) {
+                        continue;
+                    }
+
+                    const pageDiv = pageDivs[index];
+                    const canvas = pageDiv.querySelector('canvas');
+                    if (!canvas) {
+                        continue;
+                    }
+
+                    const pdfPage = await pdf.getPage(page.render_page_number || (index + 1));
+                    const viewport = pdfPage.getViewport({
+                        scale: sizing.scale
+                    });
+                    canvas.width = Math.floor(viewport.width);
+                    canvas.height = Math.floor(viewport.height);
+
+                    await pdfPage.render({
+                        canvasContext: canvas.getContext('2d'),
+                        viewport,
+                    }).promise;
+                }
+            }
+
+            async function render() {
+                if (!window.pdfjsLib || !window.jQuery || !window.jQuery.fn || typeof window.jQuery.fn.turn !==
+                    'function') {
+                    loadingMessageEl.textContent = 'Required viewer libraries failed to load.';
+                    return;
+                }
+
+                let pdf;
+                try {
+                    pdf = await window.pdfjsLib.getDocument(pdfUrl).promise;
+                } catch (error) {
+                    console.error(error);
+                    loadingMessageEl.textContent = 'Failed to load PDF.';
+                    return;
+                }
+
+                normalizePagesForRendering(pdf);
+
+                if (pages.length === 0) {
+                    loadingMessageEl.textContent = 'No pages available to share.';
+                    return;
+                }
+
+                buildPageShells();
+
+                const firstPage = await pdf.getPage(pages[0].render_page_number || 1);
+                const rawViewport = firstPage.getViewport({
+                    scale: 1
+                });
+                const sizing = computeTurnSize(rawViewport);
+
+                const pageDivs = flipbookEl.querySelectorAll('.page');
+                for (const pageDiv of pageDivs) {
+                    pageDiv.style.width = sizing.w + 'px';
+                    pageDiv.style.height = sizing.h + 'px';
+                }
+
+                await renderMissingCanvases(pdf, sizing);
+                loadingMessageEl.style.display = 'none';
+
+                $flipbook = $('#flipbook');
+                flipbookEl.style.width = (sizing.display === 'double' ? sizing.w * 2 : sizing.w) + 'px';
+                flipbookEl.style.height = sizing.h + 'px';
+                $flipbook.turn({
+                    width: sizing.display === 'double' ? sizing.w * 2 : sizing.w,
+                    height: sizing.h,
+                    autoCenter: true,
+                    display: sizing.display,
+                    duration: Math.max(Number(settings.duration) || 900, 1100),
+                    acceleration: settings.acceleration,
+                    gradients: settings.gradients,
+                    elevation: Math.max(Number(settings.elevation) || 50, 70),
+                });
+
+                $flipbook.bind('turned', function() {
+                    updatePageInfo();
+                    const currentPage = $flipbook.turn('page');
+                    sendAnalytics('page_view', {
+                        page_number: Number(pages[currentPage - 1]?.page_number || 1),
+                        meta: {
+                            source: 'turn',
+                        },
+                    });
+                });
+
+                sendAnalytics('book_open', {
+                    page_number: Number(pages[0]?.page_number || 1),
+                    meta: {
+                        source: 'share',
+                    },
+                });
+
+                updatePageInfo();
+                document.getElementById('btnPrev').addEventListener('click', () => $flipbook.turn('previous'));
+                document.getElementById('btnNext').addEventListener('click', () => $flipbook.turn('next'));
+
+                window.addEventListener('keydown', (event) => {
+                    if (!$flipbook) {
+                        return;
+                    }
+
+                    if (event.key === 'ArrowLeft') {
+                        $flipbook.turn('previous');
+                    }
+
+                    if (event.key === 'ArrowRight') {
+                        $flipbook.turn('next');
+                    }
+                });
+            }
+
+            // Initialize the PDF rendering process
+            render();
+        })();
+    </script>
+</body>
+</html>

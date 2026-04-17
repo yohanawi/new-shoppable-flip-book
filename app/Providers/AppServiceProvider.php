@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Subscription;
 use Livewire\Livewire;
 use App\Core\KTBootstrap;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Cashier\Cashier;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Update defaultStringLength
         Builder::defaultStringLength(191);
+
+        Cashier::useSubscriptionModel(Subscription::class);
 
         KTBootstrap::init();
 

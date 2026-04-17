@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $pdf->title }} - Shared Flipbook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -111,6 +112,8 @@
         (function() {
             const pdfUrl = @json($pdfUrl);
             let pages = @json($pages);
+            const trackUrl = @json(route('catalog.pdfs.analytics.track', $pdf));
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             const flipbookEl = document.getElementById('flipbook');
             const pageInfoEl = document.getElementById('pageInfo');
@@ -118,6 +121,136 @@
 
             const hasDbPages = Array.isArray(pages) && pages.length > 0;
             let $flipbook;
+
+            function createAnalyticsTracker(resolvePageNumber) {
+                let isStarted = false;
+                let activeSince = null;
+                let heartbeatId = null;
+                let isDestroyed = false;
+
+                function send(eventType, payload = {}, keepalive = false) {
+                    try {
+                        fetch(trackUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                event_type: eventType,
+                                ...payload,
+                            }),
+                            keepalive,
+                        }).catch(() => {});
+                    } catch (error) {}
+                }
+
+                function flushReadingTime(reason) {
+                    if (activeSince === null) {
+                        return;
+                    }
+
+                    const durationMs = Math.max(0, Math.min(Date.now() - activeSince, 600000));
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    if (durationMs < 1000) {
+                        return;
+                    }
+
+                    send('reading_time', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            duration_ms: durationMs,
+                            reason,
+                        },
+                    }, true);
+                }
+
+                function start() {
+                    if (isStarted) {
+                        return;
+                    }
+
+                    isStarted = true;
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    send('book_open', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source: 'share',
+                        },
+                    });
+
+                    send('page_view', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source: 'initial',
+                        },
+                    });
+
+                    heartbeatId = window.setInterval(() => flushReadingTime('heartbeat'), 15000);
+                }
+
+                function pageView(source = 'turn') {
+                    if (!isStarted) {
+                        return;
+                    }
+
+                    flushReadingTime('page_change');
+                    activeSince = document.visibilityState === 'visible' ? Date.now() : null;
+
+                    send('page_view', {
+                        page_number: resolvePageNumber(),
+                        meta: {
+                            source,
+                        },
+                    });
+                }
+
+                function destroy() {
+                    if (!isStarted || isDestroyed) {
+                        return;
+                    }
+
+                    isDestroyed = true;
+                    flushReadingTime('unload');
+
+                    if (heartbeatId !== null) {
+                        window.clearInterval(heartbeatId);
+                    }
+                }
+
+                document.addEventListener('visibilitychange', () => {
+                    if (!isStarted) {
+                        return;
+                    }
+
+                    if (document.visibilityState === 'hidden') {
+                        flushReadingTime('hidden');
+                        return;
+                    }
+
+                    activeSince = Date.now();
+                });
+
+                window.addEventListener('pagehide', destroy);
+                window.addEventListener('beforeunload', destroy);
+
+                return {
+                    start,
+                    pageView,
+                };
+            }
+
+            const analytics = createAnalyticsTracker(() => {
+                if (!$flipbook || !pages || pages.length === 0) {
+                    return Number(pages?.[0]?.page_number || 1);
+                }
+
+                const turnPage = $flipbook.turn('page');
+                return Number(pages[turnPage - 1]?.page_number || pages[0]?.page_number || 1);
+            });
 
             // Configure PDF.js worker
             if (window.pdfjsLib) {
@@ -260,9 +393,11 @@
                     // Update page info on turn
                     $flipbook.bind('turned', function(event, page) {
                         updatePageInfo();
+                        analytics.pageView('turn');
                     });
 
                     updatePageInfo();
+                    analytics.start();
 
                     document.getElementById('btnPrev').addEventListener('click', () => $flipbook.turn('previous'));
                     document.getElementById('btnNext').addEventListener('click', () => $flipbook.turn('next'));

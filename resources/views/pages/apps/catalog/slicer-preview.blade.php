@@ -307,7 +307,7 @@
                     </p>
                     <div class="share-link-container">
                         <input type="text" class="form-control" id="shareLink" readonly
-                            value="{{ route('catalog.pdfs.slicer.share', $pdf) }}">
+                            value="{{ route('catalog.pdfs.share', $pdf) }}">
                         <button type="button" class="btn btn-primary" id="btnCopyLink">
                             <i class="bi bi-clipboard"></i> Copy
                         </button>

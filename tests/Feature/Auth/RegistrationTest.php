@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,6 +28,26 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        $response->assertRedirect(route('catalog.pdfs.create'));
+    }
+
+    public function test_new_users_are_registered_as_customers_and_can_open_catalog_upload(): void
+    {
+        $this->post('/register', [
+            'name' => 'Catalog Customer',
+            'email' => 'catalog@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        /** @var User $user */
+        $user = User::query()->where('email', 'catalog@example.com')->firstOrFail();
+
+        $this->assertSame('customer', $user->role);
+        $this->assertTrue($user->isCustomer());
+
+        $response = $this->actingAs($user)->get(route('catalog.pdfs.create'));
+
+        $response->assertOk();
     }
 }

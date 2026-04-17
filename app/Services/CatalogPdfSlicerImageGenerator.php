@@ -16,7 +16,7 @@ class CatalogPdfSlicerImageGenerator
      */
     public function generate(CatalogPdf $pdf, int $maxPages = 2000): void
     {
-        if (!$pdf->isSlicerTemplate()) {
+        if (!$pdf->supportsSlicer()) {
             return;
         }
 

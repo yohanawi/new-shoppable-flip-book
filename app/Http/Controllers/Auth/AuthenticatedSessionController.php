@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -36,12 +38,21 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if (
+            app()->environment('local')
+            && method_exists($request->user(), 'hasVerifiedEmail')
+            && method_exists($request->user(), 'markEmailAsVerified')
+            && !$request->user()->hasVerifiedEmail()
+        ) {
+            $request->user()->markEmailAsVerified();
+        }
+
         $request->user()->update([
             'last_login_at' => Carbon::now()->toDateTimeString(),
             'last_login_ip' => $request->getClientIp()
         ]);
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return redirect()->intended($this->redirectPathFor($request->user()));
     }
 
     /**
@@ -60,5 +71,14 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function redirectPathFor(User $user): string
+    {
+        if ($user->isCustomer()) {
+            return route('catalog.pdfs.create');
+        }
+
+        return RouteServiceProvider::HOME;
     }
 }

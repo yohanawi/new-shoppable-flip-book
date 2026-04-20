@@ -225,7 +225,7 @@ class CatalogPdfSlicerController extends Controller
         $this->authorizePdfAccess($catalogPdf);
         abort_unless($hotspot->catalog_pdf_id === $catalogPdf->id, 404);
 
-        $validated = $this->validateHotspot($request, isUpdate: true);
+        $validated = $this->validateHotspot($request, isUpdate: true, existingHotspot: $hotspot);
         if (empty($validated['display_order'])) {
             $validated['display_order'] = $hotspot->display_order;
         }
@@ -233,6 +233,7 @@ class CatalogPdfSlicerController extends Controller
 
         $hotspot = DB::transaction(function () use ($validated, $request, $hotspot, $disk) {
             $hotspot->fill($validated);
+            $this->syncHotspotMediaForAction($hotspot);
             $hotspot->save();
 
             $this->handleHotspotUploads($request, $hotspot, $disk);
@@ -325,7 +326,7 @@ class CatalogPdfSlicerController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    private function validateHotspot(Request $request, bool $isUpdate = false): array
+    private function validateHotspot(Request $request, bool $isUpdate = false, ?CatalogPdfHotspot $existingHotspot = null): array
     {
         // HTML checkbox submits "on" when checked and omits the key when unchecked.
         // Normalize to a real boolean so the validator doesn't reject it.
@@ -386,16 +387,18 @@ class CatalogPdfSlicerController extends Controller
         }
 
         if (($validated['action_type'] ?? null) === CatalogPdfHotspot::ACTION_POPUP_IMAGE
-            && !$isUpdate
             && !$request->hasFile('popup_image')
+            && blank($existingHotspot?->popup_image_path)
         ) {
             $errors['popup_image'] = 'Upload the popup image.';
         }
 
+        $hasPopupVideoSource = $request->hasFile('popup_video')
+            || filled($validated['popup_video_url'] ?? null)
+            || filled($existingHotspot?->popup_video_path);
+
         if (($validated['action_type'] ?? null) === CatalogPdfHotspot::ACTION_POPUP_VIDEO
-            && !$isUpdate
-            && !$request->hasFile('popup_video')
-            && blank($validated['popup_video_url'] ?? null)
+            && !$hasPopupVideoSource
         ) {
             $errors['popup_video'] = 'Upload a popup video file or provide a popup video URL.';
         }
@@ -481,15 +484,53 @@ class CatalogPdfSlicerController extends Controller
             $path = $request->file('popup_video')->store($baseDir, $disk);
             $hotspot->popup_video_disk = $disk;
             $hotspot->popup_video_path = $path;
+            $hotspot->popup_video_url = null;
         }
 
         if ($request->has('popup_video_url')) {
-            $hotspot->popup_video_url = $request->filled('popup_video_url')
+            $popupVideoUrl = $request->filled('popup_video_url')
                 ? trim((string) $request->input('popup_video_url'))
                 : null;
+
+            $hotspot->popup_video_url = $popupVideoUrl;
+
+            if ($popupVideoUrl !== null) {
+                $this->deleteFileIfExists($hotspot->popup_video_disk, $hotspot->popup_video_path);
+                $hotspot->popup_video_disk = null;
+                $hotspot->popup_video_path = null;
+            }
         }
 
         $hotspot->save();
+    }
+
+    private function syncHotspotMediaForAction(CatalogPdfHotspot $hotspot): void
+    {
+        $action = $hotspot->action_type;
+        $usesThumbnail = in_array($action, [
+            CatalogPdfHotspot::ACTION_INTERNAL_PAGE,
+            CatalogPdfHotspot::ACTION_EXTERNAL_LINK,
+            CatalogPdfHotspot::ACTION_POPUP_WINDOW,
+        ], true);
+
+        if (!$usesThumbnail) {
+            $this->deleteFileIfExists($hotspot->thumbnail_disk, $hotspot->thumbnail_path);
+            $hotspot->thumbnail_disk = null;
+            $hotspot->thumbnail_path = null;
+        }
+
+        if ($action !== CatalogPdfHotspot::ACTION_POPUP_IMAGE) {
+            $this->deleteFileIfExists($hotspot->popup_image_disk, $hotspot->popup_image_path);
+            $hotspot->popup_image_disk = null;
+            $hotspot->popup_image_path = null;
+        }
+
+        if ($action !== CatalogPdfHotspot::ACTION_POPUP_VIDEO) {
+            $this->deleteFileIfExists($hotspot->popup_video_disk, $hotspot->popup_video_path);
+            $hotspot->popup_video_disk = null;
+            $hotspot->popup_video_path = null;
+            $hotspot->popup_video_url = null;
+        }
     }
 
     private function deleteHotspotMedia(CatalogPdfHotspot $hotspot): void

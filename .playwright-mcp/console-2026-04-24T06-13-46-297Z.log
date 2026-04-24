@@ -1,0 +1,4 @@
+[   32338ms] [ERROR] TypeError: Cannot read properties of null (reading 'getContext')
+    at renderTurnPage (http://127.0.0.1:8000/catalog/pdfs/7/preview:6975:48)
+    at async renderVisibleSpread (http://127.0.0.1:8000/catalog/pdfs/7/preview:7009:25)
+    at async renderAll (http://127.0.0.1:8000/catalog/pdfs/7/preview:7140:25) @ http://127.0.0.1:8000/catalog/pdfs/7/preview:6993

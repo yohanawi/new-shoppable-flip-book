@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -96,6 +97,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function billingTransactions(): HasMany
     {
         return $this->hasMany(BillingTransaction::class, 'user_id')->latest('created_at');
+    }
+
+    public function scopeCustomers(Builder $query): Builder
+    {
+        return $query->where(function (Builder $customerQuery) {
+            $customerQuery
+                ->whereRaw('LOWER(COALESCE(role, "")) = ?', ['customer'])
+                ->orWhereHas('roles', function (Builder $roleQuery) {
+                    $roleQuery->whereRaw('LOWER(name) = ?', ['customer']);
+                });
+        });
     }
 
     public function isAdmin(): bool

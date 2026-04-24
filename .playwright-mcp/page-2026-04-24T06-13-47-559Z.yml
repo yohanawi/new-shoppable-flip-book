@@ -1,0 +1,28 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - heading "Sign In" [level=1] [ref=e9]
+        - generic [ref=e10]: Sign in to manage your Flipbook Shop & Products
+      - textbox "Email" [ref=e12]
+      - textbox "Password" [ref=e14]
+      - link "Forgot Password ?" [ref=e16] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/forgot-password
+      - button "Sign In" [ref=e18] [cursor=pointer]
+      - generic [ref=e19]:
+        - text: Not a Member yet?
+        - link "Sign up" [ref=e20] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/register
+    - generic [ref=e22]:
+      - heading "Fast, Efficient and Productive" [level=1] [ref=e23]
+      - generic [ref=e24]:
+        - text: In this kind of post,
+        - link "the blogger" [ref=e25] [cursor=pointer]:
+          - /url: "#"
+        - text: introduces a person they’ve interviewed
+        - text: and provides some background information about
+        - link "the interviewee" [ref=e26] [cursor=pointer]:
+          - /url: "#"
+        - text: and their
+        - text: work following this is a transcript of the interview.
+  - img

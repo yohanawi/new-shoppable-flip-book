@@ -91,6 +91,11 @@ class CatalogPdf extends Model
         return $this->hasOne(CatalogPdfFlipPhysicsSetting::class, 'catalog_pdf_id');
     }
 
+    public function sharePreviewSetting(): HasOne
+    {
+        return $this->hasOne(CatalogPdfSharePreviewSetting::class, 'catalog_pdf_id');
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(CatalogPdfEvent::class, 'catalog_pdf_id');

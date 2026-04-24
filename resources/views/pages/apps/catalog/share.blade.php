@@ -10,8 +10,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         :root {
-            --share-bg-top: #08111f;
-            --share-bg-bottom: #133a66;
+            --share-bg-top: {{ $shareAppearance['backgroundColor'] ?? '#08111f' }};
+            --share-bg-bottom: {{ $shareAppearance['backgroundColor'] ?? '#133a66' }};
+            --share-toolbar-bg: {{ $shareAppearance['toolbarBackgroundColor'] ?? '#020617' }};
             --share-panel-border: rgba(255, 255, 255, 0.12);
             --share-text: #eef4ff;
             --share-muted: rgba(238, 244, 255, 0.72);
@@ -42,6 +43,34 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            isolation: isolate;
+        }
+
+        .share-background-media,
+        .share-background-media img,
+        .share-background-media video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .share-background-media {
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .share-background-media img,
+        .share-background-media video {
+            object-fit: cover;
+            filter: saturate(1.08);
+        }
+
+        .share-background-media::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(2, 6, 23, 0.3), rgba(2, 6, 23, 0.62));
         }
 
         .share-shell::before,
@@ -69,7 +98,7 @@
         }
 
         .share-toolbar {
-            background: linear-gradient(180deg, rgba(2, 6, 23, 0.86), rgba(2, 6, 23, 0.55));
+            background: var(--share-toolbar-bg);
             backdrop-filter: blur(16px);
             padding: 18px 28px;
             display: flex;
@@ -276,6 +305,34 @@
             font-weight: 700;
         }
 
+        .share-brand-badge {
+            position: absolute;
+            z-index: 4;
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 20px;
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: 0 22px 50px rgba(2, 6, 23, 0.35);
+            backdrop-filter: blur(14px);
+            color: var(--share-text);
+        }
+
+        .share-brand-badge img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .share-brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+        }
+
         @media (max-width: 991.98px) {
             .share-content {
                 padding: 18px 16px 20px;
@@ -319,20 +376,53 @@
                 font-size: 12px;
                 width: calc(100% - 32px);
             }
+
+            .share-brand-badge {
+                max-width: calc(100% - 24px);
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="share-shell">
-        <div class="share-toolbar">
-            <div>
-                <h1 class="share-title">{{ $pdf->title }}</h1>
-                <div class="share-meta">
-                    <span class="share-badge" id="pageInfo">Loading...</span>
+        @if (($shareAppearance['backgroundType'] ?? 'color') === 'image' && !empty($shareAppearance['backgroundImageUrl']))
+            <div class="share-background-media" aria-hidden="true">
+                <img src="{{ $shareAppearance['backgroundImageUrl'] }}" alt="">
+            </div>
+        @elseif (($shareAppearance['backgroundType'] ?? 'color') === 'video' && !empty($shareAppearance['backgroundVideoUrl']))
+            <div class="share-background-media" aria-hidden="true">
+                <video src="{{ $shareAppearance['backgroundVideoUrl'] }}" autoplay muted loop playsinline></video>
+            </div>
+        @endif
+
+        @if (!empty($shareAppearance['hasBranding']))
+            <div class="share-brand-badge"
+                style="left: {{ $shareAppearance['logoPositionX'] ?? 8 }}%; top: {{ $shareAppearance['logoPositionY'] ?? 8 }}%; width: {{ $shareAppearance['logoWidth'] ?? 168 }}px;">
+                @if (!empty($shareAppearance['logoUrl']))
+                    <div>
+                        <img src="{{ $shareAppearance['logoUrl'] }}" alt="Logo">
+                    </div>
+                @endif
+                @if (!empty($shareAppearance['logoTitle']))
+                    <div class="share-brand-title">{{ $shareAppearance['logoTitle'] }}</div>
+                @endif
+            </div>
+        @endif
+
+        @if ($shareAppearance['toolbarVisible'] ?? true)
+            <div class="share-toolbar">
+                <div>
+                    <h1 class="share-title">{{ $pdf->title }}</h1>
+                    <div class="share-meta">
+                        <span class="share-badge" id="pageInfo">Loading...</span>
+                        @if (!empty($shareAppearance['hasBranding']))
+                            <span class="share-badge">Branded preview</span>
+                        @endif
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         <div class="share-content">
             <div class="share-stage">
@@ -850,4 +940,5 @@
         })();
     </script>
 </body>
+
 </html>

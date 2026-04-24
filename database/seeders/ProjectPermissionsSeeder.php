@@ -37,6 +37,8 @@ class ProjectPermissionsSeeder extends Seeder
     {
         return [
             'dashboard.view',
+            'admin.dashboard.view',
+            'customer.dashboard.view',
             'account.profile.view',
             'account.settings.view',
             'account.settings.update',
@@ -110,6 +112,7 @@ class ProjectPermissionsSeeder extends Seeder
             'admin' => $allPermissions,
             'customer' => [
                 'dashboard.view',
+                'customer.dashboard.view',
                 'account.profile.view',
                 'account.settings.view',
                 'account.settings.update',

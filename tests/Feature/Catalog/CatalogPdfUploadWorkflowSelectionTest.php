@@ -41,12 +41,11 @@ class CatalogPdfUploadWorkflowSelectionTest extends TestCase
 
         $showResponse = $this->actingAs($user)->get(route('catalog.pdfs.show', $pdf));
         $showResponse->assertOk();
-        $showResponse->assertSee('Build, preview, and share one PDF from a single command center.');
         $showResponse->assertSee('Use all functions on this PDF');
+        $showResponse->assertSee('Open any tool below. They all work on the same uploaded file.');
         $showResponse->assertSee(route('catalog.pdfs.manage', $pdf), false);
         $showResponse->assertSee(route('catalog.pdfs.flip-physics.edit', $pdf), false);
         $showResponse->assertSee(route('catalog.pdfs.slicer.edit', $pdf), false);
-        $showResponse->assertSee(route('catalog.pdfs.source', $pdf), false);
     }
 
     public function test_customer_can_select_flip_physics_after_uploading_pdf(): void

@@ -1,0 +1,25 @@
+[  153459ms] [ERROR] destroy is an invalid value @ http://127.0.0.1:8000/catalog/pdfs/7/preview:6888
+[  153463ms] [ERROR] Error: "6" is not a page for range
+    at jQuery.fn.init.range (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:11:199)
+    at N (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:45:365)
+    at jQuery.fn.init.turn (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:46:25)
+    at jQuery.fn.init._necessPage (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:12:12)
+    at jQuery.fn.init._addPage (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:8:374)
+    at jQuery.fn.init.addPage (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:8:214)
+    at N (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:45:365)
+    at jQuery.fn.init.turn (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:46:25)
+    at jQuery.fn.init.init (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:6:455)
+    at N (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:45:294) @ http://127.0.0.1:8000/catalog/pdfs/7/preview:7157
+[  161794ms] [ERROR] destroy is an invalid value @ http://127.0.0.1:8000/catalog/pdfs/7/preview:6888
+[  184802ms] [ERROR] destroy is an invalid value @ http://127.0.0.1:8000/catalog/pdfs/7/preview:6888
+[  184806ms] [ERROR] Error: "9" is not a page for range
+    at jQuery.fn.init.range (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:11:199)
+    at N (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:45:365)
+    at jQuery.fn.init.turn (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:46:25)
+    at jQuery.fn.init._necessPage (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:12:12)
+    at jQuery.fn.init._addPage (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:8:374)
+    at jQuery.fn.init.addPage (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:8:214)
+    at N (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:45:365)
+    at jQuery.fn.init.turn (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:46:25)
+    at jQuery.fn.init.init (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:6:455)
+    at N (http://127.0.0.1:8000/assets/plugins/custom/turnjs/turn.min.js:45:294) @ http://127.0.0.1:8000/catalog/pdfs/7/preview:7157

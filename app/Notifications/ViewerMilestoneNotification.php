@@ -5,9 +5,8 @@ namespace App\Notifications;
 use App\Models\CatalogPdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
 
-class ViewerMilestoneNotification extends Notification
+class ViewerMilestoneNotification extends RealtimeDatabaseNotification
 {
     use Queueable;
 
@@ -17,9 +16,9 @@ class ViewerMilestoneNotification extends Notification
         private readonly int $viewsCount,
     ) {}
 
-    public function via(object $notifiable): array
+    protected function additionalChannels(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -37,7 +36,7 @@ class ViewerMilestoneNotification extends Notification
             ->line('Keep publishing and sharing to build more reach.');
     }
 
-    public function toArray(object $notifiable): array
+    protected function notificationData(object $notifiable): array
     {
         return [
             'type' => 'viewer_milestone',

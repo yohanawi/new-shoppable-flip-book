@@ -32,14 +32,25 @@ class ProjectPermissionsSeederTest extends TestCase
             'name' => 'admin.webhook.view',
         ]);
 
+        $this->assertDatabaseHas('permissions', [
+            'name' => 'admin.dashboard.view',
+        ]);
+
+        $this->assertDatabaseHas('permissions', [
+            'name' => 'customer.dashboard.view',
+        ]);
+
         $adminRole = Role::query()->where('name', 'admin')->firstOrFail();
         $customerRole = Role::query()->where('name', 'customer')->firstOrFail();
 
         $this->assertTrue($adminRole->hasPermissionTo('users.delete'));
+        $this->assertTrue($adminRole->hasPermissionTo('admin.dashboard.view'));
         $this->assertTrue($adminRole->hasPermissionTo('admin.plan.manage'));
         $this->assertTrue($customerRole->hasPermissionTo('catalog.create'));
+        $this->assertTrue($customerRole->hasPermissionTo('customer.dashboard.view'));
         $this->assertTrue($customerRole->hasPermissionTo('customer.billing.view'));
         $this->assertFalse($customerRole->hasPermissionTo('users.delete'));
+        $this->assertFalse($customerRole->hasPermissionTo('admin.dashboard.view'));
         $this->assertFalse($customerRole->hasPermissionTo('admin.plan.manage'));
 
         $this->assertGreaterThanOrEqual(1, Permission::query()->count());

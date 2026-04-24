@@ -5,16 +5,18 @@
         data-kt-scroll-wrappers="#kt_app_sidebar_menu" data-kt-scroll-offset="5px" data-kt-scroll-save-state="true">
         <div class="menu menu-column menu-rounded menu-sub-indention px-3 fw-semibold fs-6" id="#kt_app_sidebar_menu"
             data-kt-menu="true" data-kt-menu-expand="false">
-            <div data-kt-menu-trigger="click"
-                class="menu-item menu-accordion {{ request()->routeIs('dashboard') ? 'here show' : '' }}">
-                <a class="menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
-                    href="{{ route('dashboard') }}">
-                    <span class="menu-bullet">
-                        <span class="menu-icon">{!! getIcon('element-11', 'fs-2') !!}</span>
-                    </span>
-                    <span class="menu-title">Dashboard</span>
-                </a>
-            </div>
+            @canany(['admin.dashboard.view', 'customer.dashboard.view'])
+                <div data-kt-menu-trigger="click"
+                    class="menu-item menu-accordion {{ request()->routeIs('dashboard') ? 'here show' : '' }}">
+                    <a class="menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                        href="{{ route('dashboard') }}">
+                        <span class="menu-bullet">
+                            <span class="menu-icon">{!! getIcon('element-11', 'fs-2') !!}</span>
+                        </span>
+                        <span class="menu-title">Dashboard</span>
+                    </a>
+                </div>
+            @endcanany
             <div class="menu-item pt-5">
                 <div class="menu-content">
                     <span class="menu-heading fw-bold text-uppercase fs-7">Apps</span>
@@ -58,6 +60,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="menu-item">
+                    <a class="menu-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}"
+                        href="{{ route('admin.customers.index') }}">
+                        <span class="menu-icon">{!! getIcon('people', 'fs-2') !!}</span>
+                        <span class="menu-title">Customers</span>
+                    </a>
+                </div>
             @endif
             <div data-kt-menu-trigger="click"
                 class="menu-item menu-accordion {{ request()->routeIs('catalog.*') ? 'here show' : '' }}">
@@ -68,12 +77,34 @@
                 </span>
                 <div class="menu-sub menu-sub-accordion">
                     <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs('catalog.pdfs.create') ? 'active' : '' }}"
+                            href="{{ route('catalog.pdfs.create') }}">
+                            <span class="menu-bullet">
+                                <span class="bullet bullet-dot"></span>
+                            </span>
+                            <span class="menu-title">Upload Catalog</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
                         <a class="menu-link {{ request()->routeIs('catalog.pdfs.*') ? 'active' : '' }}"
                             href="{{ route('catalog.pdfs.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
                             </span>
-                            <span class="menu-title">PDFs</span>
+                            <span class="menu-title">Catalogs</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="menu-sub menu-sub-accordion">
+                    <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs('catalog.pdfs.share-preview.*') ? 'active' : '' }}"
+                            href="{{ route('catalog.pdfs.share-preview.index') }}">
+                            <span class="menu-bullet">
+                                <span class="bullet bullet-dot"></span>
+                            </span>
+                            <span class="menu-title">Share Preview Studio</span>
                         </a>
                     </div>
                 </div>
@@ -91,17 +122,26 @@
                         <span class="menu-title">Billing</span>
                     </a>
                 </div>
+            @endif
+            @if (auth()->user()?->isAdmin() || auth()->user()?->isCustomer())
                 <div class="menu-item pt-5">
                     <div class="menu-content">
                         <span class="menu-heading fw-bold text-uppercase fs-7">Analytics</span>
                     </div>
                 </div>
-                @if (app(\App\Services\BillingManager::class)->hasFeature(auth()->user(), 'analytics'))
+                @if (auth()->user()?->isAdmin() || app(\App\Services\BillingManager::class)->hasFeature(auth()->user(), 'analytics'))
                     <div class="menu-item">
                         <a class="menu-link {{ request()->routeIs('analytics.*') ? 'active' : '' }}"
                             href="{{ route('analytics.index') }}">
                             <span class="menu-icon">{!! getIcon('chart-line', 'fs-2') !!}</span>
                             <span class="menu-title">Book Analytics</span>
+                        </a>
+                    </div>
+                @elseif (auth()->user()?->isCustomer())
+                    <div class="menu-item">
+                        <a class="menu-link" href="{{ route('billing.index') }}">
+                            <span class="menu-icon">{!! getIcon('chart-line', 'fs-2') !!}</span>
+                            <span class="menu-title">Unlock Analytics</span>
                         </a>
                     </div>
                 @endif
@@ -125,14 +165,14 @@
                     <span class="menu-heading fw-bold text-uppercase fs-7">Support</span>
                 </div>
             </div>
-            <div class="menu-item">
-                <a class="menu-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}"
-                    href="{{ route('notifications.index') }}">
-                    <span class="menu-icon">{!! getIcon('notification-bing', 'fs-2') !!}</span>
-                    <span class="menu-title">Notifications</span>
-                </a>
-            </div>
             @if (auth()->user()?->isAdmin())
+                <div class="menu-item">
+                    <a class="menu-link {{ request()->routeIs('notifications.*') ? 'active' : '' }}"
+                        href="{{ route('notifications.index') }}">
+                        <span class="menu-icon">{!! getIcon('notification-bing', 'fs-2') !!}</span>
+                        <span class="menu-title">Notifications</span>
+                    </a>
+                </div>
                 <div class="menu-item">
                     <a class="menu-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}"
                         href="{{ route('admin.notifications.index') }}">

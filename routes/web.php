@@ -5,6 +5,8 @@ use App\Http\Controllers\Apps\RoleManagementController;
 use App\Http\Controllers\Apps\UserManagementController;
 use App\Http\Controllers\Apps\CatalogPdfController;
 use App\Http\Controllers\Apps\CatalogAnalyticsController;
+use App\Http\Controllers\Apps\AdminCustomerController;
+use App\Http\Controllers\Apps\CatalogPdfSharePreviewController;
 use App\Http\Controllers\Apps\CatalogPdfPageManagementController;
 use App\Http\Controllers\Apps\CatalogPdfFlipPhysicsController;
 use App\Http\Controllers\Apps\CatalogPdfSlicerController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Notifications\AdminNotificationController;
 use App\Http\Controllers\Notifications\NotificationController;
 use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Apps\CustomerTicketController;
+use App\Http\Controllers\Apps\SupportTicketCategoryController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,13 +39,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/analytics', [CatalogAnalyticsController::class, 'index'])
-        ->middleware(['role:customer', 'permission:customer.analytics.view', 'billing.feature:analytics'])
         ->name('analytics.index');
 
-    Route::name('user-management.')->group(function () {
+    Route::name('user-management.')->middleware(['role:admin'])->group(function () {
         Route::resource('/user-management/users', UserManagementController::class);
         Route::resource('/user-management/roles', RoleManagementController::class);
         Route::resource('/user-management/permissions', PermissionManagementController::class);
+    });
+
+    Route::prefix('admin/customers')->name('admin.customers.')->middleware(['role:admin'])->group(function () {
+        Route::get('/', [AdminCustomerController::class, 'index'])->name('index');
+        Route::get('/{customer}', [AdminCustomerController::class, 'show'])->name('show');
     });
 
     // Customer Routes
@@ -107,6 +114,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [NotificationController::class, 'index'])
             ->middleware('permission:notifications.view')
             ->name('index');
+        Route::get('/feed', [NotificationController::class, 'feed'])
+            ->middleware('permission:notifications.view')
+            ->name('feed');
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])
             ->middleware('permission:notifications.manage')
             ->name('read-all');
@@ -131,11 +141,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [CustomerTicketController::class, 'store'])->name('store');
         Route::get('/{ticket}', [CustomerTicketController::class, 'show'])->name('show');
         Route::post('/{ticket}/reply', [CustomerTicketController::class, 'reply'])->name('reply');
+        Route::patch('/{ticket}/status', [CustomerTicketController::class, 'updateStatus'])->name('status.update');
+        Route::post('/{ticket}/feedback', [CustomerTicketController::class, 'storeFeedback'])->name('feedback.store');
+    });
+
+    Route::prefix('admin/ticket-categories')->name('tickets.categories.')->middleware(['role:admin'])->group(function () {
+        Route::get('/', [SupportTicketCategoryController::class, 'index'])->name('index');
+        Route::post('/', [SupportTicketCategoryController::class, 'store'])->name('store');
+        Route::put('/{category}', [SupportTicketCategoryController::class, 'update'])->name('update');
+        Route::delete('/{category}', [SupportTicketCategoryController::class, 'destroy'])->name('destroy');
     });
 });
 
 Route::prefix('catalog/pdfs')->name('catalog.pdfs.')->group(function () {
     Route::get('/{catalogPdf}/share', [CatalogPdfController::class, 'share'])->name('share');
+    Route::get('/{catalogPdf}/share-preview/assets/{asset}', [CatalogPdfSharePreviewController::class, 'asset'])->name('share-preview.asset');
     Route::get('/{catalogPdf}/flip-physics/share', [CatalogPdfController::class, 'share'])->name('flip-physics.share');
     Route::get('/{catalogPdf}/slicer/share', [CatalogPdfController::class, 'share'])->name('slicer.share');
     Route::get('/{catalogPdf}/file', [CatalogPdfController::class, 'file'])->name('file');
@@ -150,8 +170,11 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('catalog/pdfs')->name('catalog.pdfs.')->group(function () {
         Route::get('/', [CatalogPdfController::class, 'index'])->name('index');
         Route::get('/create', [CatalogPdfController::class, 'create'])->name('create');
+        Route::get('/share-preview', [CatalogPdfSharePreviewController::class, 'index'])->name('share-preview.index');
         Route::post('/', [CatalogPdfController::class, 'store'])->name('store');
         Route::get('/{catalogPdf}', [CatalogPdfController::class, 'show'])->name('show');
+        Route::get('/{catalogPdf}/share-preview', [CatalogPdfSharePreviewController::class, 'edit'])->name('share-preview.edit');
+        Route::post('/{catalogPdf}/share-preview', [CatalogPdfSharePreviewController::class, 'update'])->name('share-preview.update');
         Route::post('/{catalogPdf}/workflow', [CatalogPdfController::class, 'selectWorkflow'])->name('workflow.select');
         Route::get('/{catalogPdf}/source', [CatalogPdfController::class, 'source'])->name('source');
         Route::delete('/{catalogPdf}', [CatalogPdfController::class, 'destroy'])->name('delete');

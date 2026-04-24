@@ -212,7 +212,48 @@ class CatalogAnalyticsTest extends TestCase
         $this->assertSame('test', $event->meta['source']);
     }
 
-    public function test_non_customer_cannot_open_analytics_page(): void
+    public function test_admin_can_open_analytics_page(): void
+    {
+        $this->seed([
+            ProjectPermissionsSeeder::class,
+            BillingSeeder::class,
+        ]);
+
+        /** @var User $admin */
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+        $admin->assignRole('admin');
+
+        /** @var User $owner */
+        $owner = User::factory()->create([
+            'role' => 'customer',
+            'name' => 'Catalog Owner',
+            'email' => 'owner@example.com',
+        ]);
+        $owner->assignRole('customer');
+
+        CatalogPdf::create([
+            'user_id' => $owner->id,
+            'title' => 'Admin Visible Catalog',
+            'template_type' => CatalogPdf::TEMPLATE_UPLOADED,
+            'visibility' => CatalogPdf::VISIBILITY_PUBLIC,
+            'storage_disk' => 'public',
+            'pdf_path' => 'catalog-pdfs/admin-visible.pdf',
+            'original_filename' => 'admin-visible.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('analytics.index'));
+
+        $response->assertOk();
+        $response->assertSee('Catalog Analytics Overview');
+        $response->assertSee('Admin Visible Catalog');
+        $response->assertSee('Catalog Owner');
+    }
+
+    public function test_customer_without_customer_role_cannot_open_analytics_page(): void
     {
         $this->seed([
             ProjectPermissionsSeeder::class,
@@ -220,10 +261,7 @@ class CatalogAnalyticsTest extends TestCase
         ]);
 
         /** @var User $user */
-        $user = User::factory()->create([
-            'role' => 'admin',
-        ]);
-        $user->assignRole('admin');
+        $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(route('analytics.index'));
 

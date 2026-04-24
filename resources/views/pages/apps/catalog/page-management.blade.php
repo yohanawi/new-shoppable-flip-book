@@ -8,33 +8,28 @@
         {{ Breadcrumbs::render('catalog.pdfs.page-management', $pdf) }}
     @endsection
 
-    <div class="card border-0 shadow-sm overflow-hidden mb-8">
-        <div class="card-body p-0">
-            <div class="p-10 p-lg-15" style="background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);">
-                <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center">
-                    <div class="mw-500px">
-                        <span class="badge badge-light-primary mb-4">Page Management</span>
-                        <h1 class="text-white fw-bold mb-4">Manage pages for {{ $pdf->title }}</h1>
-                        <div class="text-white opacity-75 fs-5">
-                            This screen is for managing the PDF pages only. Reorder pages, rename them, hide them,
-                            lock them, or replace the uploaded PDF. These changes also feed the same PDF used by Flip
-                            Physics and Slicer.
-                        </div>
-                    </div>
+    @php
+        $previewVersion = max(
+            (int) optional($pdf->updated_at)->getTimestamp(),
+            (int) ($pages
+                ->filter(fn($page) => $page->updated_at)
+                ->max(fn($page) => $page->updated_at->getTimestamp()) ?? 0),
+        );
+        $livePreviewUrl = route('catalog.pdfs.file', [$pdf, 'v' => $previewVersion ?: now()->getTimestamp()]);
+        $latestDownloadUrl = route('catalog.pdfs.download', [$pdf, 'v' => $previewVersion ?: now()->getTimestamp()]);
+    @endphp
 
-                    <div class="d-flex flex-wrap gap-3">
-                        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light">
-                            Back
-                        </a>
-                        <a href="{{ route('catalog.pdfs.preview', $pdf) }}" class="btn btn-light-primary">
-                            Preview Flipbook
-                        </a>
-                        <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-success">
-                            Download Managed PDF
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center mb-8">
+        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light border">
+            <i class="ki-outline ki-arrow-left fs-2"></i> Back
+        </a>
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{{ route('catalog.pdfs.preview', $pdf) }}" class="btn btn-light-primary">
+                Preview Flipbook
+            </a>
+            <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-success">
+                Download Managed PDF
+            </a>
         </div>
     </div>
 
@@ -45,68 +40,53 @@
         </div>
     @endif
 
-    <div class="row g-6 g-xl-8 mb-8">
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Current function</div>
-                    <div class="fw-bold text-gray-900 fs-3">Page Management</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Pages</div>
-                    <div class="fw-bold text-gray-900 fs-3">{{ $pages->count() }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Visibility</div>
-                    <div class="fw-bold text-gray-900 fs-3 text-capitalize">{{ $pdf->visibility }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Original file</div>
-                    <div class="fw-bold text-gray-900 fs-6">{{ $pdf->original_filename ?: 'Uploaded PDF' }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-7">
+    <div class="row g-7 align-items-start">
 
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm mb-7">
-                <div class="card-header border-0 pt-7">
-                    <h3 class="card-title fw-bold text-gray-900">PDF Preview</h3>
-                </div>
-                <div class="card-body p-0" style="height: 55vh;">
-                    <iframe src="{{ route('catalog.pdfs.file', $pdf) }}" style="border:0; width:100%; height:100%;"
-                        title="{{ $pdf->title }}"></iframe>
-                </div>
-                <div class="card-footer bg-transparent border-0 pt-0 pb-7 px-7">
-                    <a href="{{ route('catalog.pdfs.preview', $pdf) }}" class="btn btn-light-primary w-100">Open
-                        Flipbook Preview</a>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm mt-7">
-                <div class="card-header border-0 pt-7">
-                    <div class="card-title flex-column align-items-start">
-                        <h3 class="fw-bold text-gray-900 mb-1">Download</h3>
-                        <div class="text-muted fs-7">Download includes page order, hidden pages, and deletes.</div>
+            <div class="position-sticky top-0">
+                <div class="card border-0 shadow-sm mb-7">
+                    <div class="card-header border-0 pt-7 pb-3 px-7">
+                        <div>
+                            <span class="badge badge-light-primary mb-4">Live PDF Preview</span>
+                            <h3 class="card-title fw-bold text-gray-900 mb-2">{{ $pdf->title }}</h3>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <a class="btn btn-light-primary w-100" href="{{ route('catalog.pdfs.download', $pdf) }}">Download
-                        Managed PDF</a>
+                    <div class="card-body pt-0 px-7 pb-5">
+                        <div class="row g-3 mb-6">
+                            <div class="col-6 col-xl-4">
+                                <div
+                                    class="border border-dashed border-gray-300 rounded-3 bg-light-primary px-4 py-3 h-100">
+                                    <span class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">
+                                        Total Pages
+                                    </span>
+                                    <span class="text-gray-900 fw-bold fs-2">{{ $pages->count() }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-xl-4">
+                                <div
+                                    class="border border-dashed border-gray-300 rounded-3 bg-light-warning px-4 py-3 h-100">
+                                    <span class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">Hidden</span>
+                                    <span
+                                        class="text-gray-900 fw-bold fs-2">{{ $pages->where('is_hidden', true)->count() }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-xl-4">
+                                <div
+                                    class="border border-dashed border-gray-300 rounded-3 bg-light-danger px-4 py-3 h-100">
+                                    <span class="text-muted text-uppercase fw-semibold fs-8 d-block mb-1">Locked</span>
+                                    <span
+                                        class="text-gray-900 fw-bold fs-2">{{ $pages->where('is_locked', true)->count() }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-4 overflow-hidden bg-light">
+                            <div style="height: 78vh; min-height: 720px;">
+                                <iframe src="{{ $livePreviewUrl }}" class="w-100 h-100"
+                                    title="{{ $pdf->title }}"></iframe>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -116,8 +96,9 @@
                 <div class="card-header border-0 pt-7">
                     <h3 class="card-title align-items-start flex-column">
                         <span class="card-label fw-bold text-gray-900">Edit Pages</span>
-                        <span class="text-muted mt-1 fw-semibold fs-7">Rename pages, change order, hide, lock, or mark
-                            pages for deletion.</span>
+                        <span class="text-muted mt-1 fw-semibold fs-7">
+                            Rename pages, drag to reorder, hide, lock, or mark pages for deletion.
+                        </span>
                     </h3>
                 </div>
 
@@ -126,9 +107,10 @@
                         <div class="alert alert-warning d-flex flex-column flex-sm-row p-5 mb-8">
                             <div class="d-flex flex-column">
                                 <h5 class="mb-1">Pages not initialized</h5>
-                                <span class="text-gray-700">Your PDF is uploaded, but page records were not created.
-                                    Click <strong>Initialize Pages</strong> to generate pages using PDF.js
-                                    (browser).</span>
+                                <span class="text-gray-700">
+                                    Your PDF is uploaded, but page records were not created.
+                                    Click <strong>Initialize Pages</strong> to generate pages using PDF.js (browser).
+                                </span>
                             </div>
                         </div>
 
@@ -153,28 +135,39 @@
                                 </div>
                             @endif
 
-                            <div class="table-responsive">
-                                <table class="table align-middle table-row-dashed fs-6 gy-5">
+                            <div class="table-responsive border rounded-3">
+                                <table class="table align-middle table-row-dashed fs-6 gy-5 mb-0 page-management-table">
                                     <thead>
                                         <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
-                                            <th style="width: 120px;">Order</th>
-                                            <th style="width: 120px;">Page #</th>
+                                            <th class="min-w-150px ps-3">Order</th>
+                                            <th class="min-w-100px">Page #</th>
                                             <th>Page Title</th>
-                                            <th style="width: 120px;">Hidden</th>
-                                            <th style="width: 120px;">Locked</th>
-                                            <th class="text-end" style="width: 120px;">Action</th>
+                                            <th class="w-125px">Hidden</th>
+                                            <th class="w-125px">Locked</th>
+                                            <th class="text-end w-125px pe-3">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="text-gray-600 fw-semibold" id="page-management-table">
                                         @forelse ($pages as $page)
-                                            <tr data-page-row data-page-id="{{ $page->id }}">
-                                                <td>
+                                            <tr data-page-row data-page-id="{{ $page->id }}" data-drag-ready="0">
+                                                <td class="min-w-150px ps-5">
                                                     <input type="hidden" name="pages[{{ $page->id }}][is_deleted]"
                                                         value="0" class="delete-flag-input">
-                                                    <input type="number" min="1"
-                                                        class="form-control form-control-solid order-input"
+                                                    <input type="hidden" class="order-input"
                                                         name="pages[{{ $page->id }}][display_order]"
                                                         value="{{ old('pages.' . $page->id . '.display_order', $page->display_order) }}">
+                                                    <div class="d-inline-flex align-items-center gap-3">
+                                                        <button type="button"
+                                                            class="btn btn-icon btn-light btn-active-light-primary drag-handle w-40px h-40px"
+                                                            aria-label="Drag page to reorder">
+                                                            <i class="bi bi-grip-vertical fs-3 text-gray-500"></i>
+                                                        </button>
+                                                        <span
+                                                            class="badge badge-light-primary d-inline-flex align-items-center justify-content-center w-40px h-40px"
+                                                            data-order-label>
+                                                            {{ old('pages.' . $page->id . '.display_order', $page->display_order) }}
+                                                        </span>
+                                                    </div>
                                                     <div class="form-text text-muted">Drag row to reorder</div>
                                                 </td>
                                                 <td>
@@ -187,8 +180,7 @@
                                                         value="{{ old('pages.' . $page->id . '.title', $page->title) }}">
                                                     @if ($page->is_locked)
                                                         <div class="form-text text-muted">Locked page (changes are
-                                                            ignored
-                                                            until unlocked)</div>
+                                                            ignored until unlocked)</div>
                                                     @endif
                                                     <div class="mt-2 row-status"></div>
                                                 </td>
@@ -213,7 +205,7 @@
                                                             {{ old('pages.' . $page->id . '.is_locked', $page->is_locked) ? 'checked' : '' }}>
                                                     </div>
                                                 </td>
-                                                <td class="text-end">
+                                                <td class="text-end pe-5">
                                                     <button type="button"
                                                         class="btn btn-sm btn-light-danger toggle-delete-btn">
                                                         Delete
@@ -231,7 +223,7 @@
                                 </table>
                             </div>
 
-                            <div class="d-flex justify-content-end">
+                            <div class="d-flex justify-content-end mt-5">
                                 <button type="submit" class="btn btn-primary">Save Changes</button>
                             </div>
                         </form>
@@ -299,6 +291,7 @@
 
                         getRows().forEach((row) => {
                             const orderInput = row.querySelector('.order-input');
+                            const orderLabel = row.querySelector('[data-order-label]');
                             const deleteFlagInput = row.querySelector('.delete-flag-input');
                             if (!orderInput || !deleteFlagInput) {
                                 return;
@@ -308,8 +301,39 @@
                                 return;
                             }
 
-                            orderInput.value = String(nextOrder++);
+                            orderInput.value = String(nextOrder);
+
+                            if (orderLabel) {
+                                orderLabel.textContent = String(nextOrder);
+                            }
+
+                            nextOrder++;
                         });
+                    };
+
+                    const hasBlockingRowBetween = (draggedCandidate, targetCandidate) => {
+                        const rows = getRows();
+                        const startIndex = rows.indexOf(draggedCandidate);
+                        const endIndex = rows.indexOf(targetCandidate);
+
+                        if (startIndex === -1 || endIndex === -1) {
+                            return true;
+                        }
+
+                        const lower = Math.min(startIndex, endIndex);
+                        const upper = Math.max(startIndex, endIndex);
+
+                        for (let index = lower + 1; index < upper; index++) {
+                            const row = rows[index];
+                            const lockCheckbox = row.querySelector('.lock-checkbox');
+                            const deleteFlagInput = row.querySelector('.delete-flag-input');
+
+                            if (lockCheckbox?.checked || deleteFlagInput?.value === '1') {
+                                return true;
+                            }
+                        }
+
+                        return false;
                     };
 
                     const renderStatus = (row, locked, deleted) => {
@@ -337,22 +361,27 @@
                         const lockCheckbox = row.querySelector('.lock-checkbox');
                         const deleteFlagInput = row.querySelector('.delete-flag-input');
                         const titleInput = row.querySelector('.title-input');
-                        const orderInput = row.querySelector('.order-input');
+                        const dragHandle = row.querySelector('.drag-handle');
                         const deleteButton = row.querySelector('.toggle-delete-btn');
 
-                        if (!lockCheckbox || !deleteFlagInput || !titleInput || !orderInput || !deleteButton) {
+                        if (!lockCheckbox || !deleteFlagInput || !titleInput || !dragHandle || !deleteButton) {
                             return;
                         }
 
                         const locked = lockCheckbox.checked;
                         const deleted = deleteFlagInput.value === '1';
 
+                        row.classList.remove('bg-light-primary', 'bg-light', 'opacity-75');
                         row.classList.toggle('opacity-50', deleted);
                         row.classList.toggle('text-decoration-line-through', deleted);
+                        row.classList.toggle('bg-light-primary', draggedRow === row);
+                        row.classList.toggle('bg-light', locked || deleted);
+                        row.classList.toggle('opacity-75', locked && !deleted);
                         row.draggable = !locked && !deleted;
 
                         titleInput.readOnly = locked || deleted;
-                        orderInput.readOnly = locked || deleted;
+                        dragHandle.disabled = locked || deleted;
+                        row.dataset.dragReady = '0';
 
                         deleteButton.textContent = deleted ? 'Undo' : 'Delete';
                         deleteButton.classList.toggle('btn-light-danger', !deleted);
@@ -365,6 +394,7 @@
                         const lockCheckbox = row.querySelector('.lock-checkbox');
                         const hiddenCheckbox = row.querySelector('.hidden-checkbox');
                         const deleteFlagInput = row.querySelector('.delete-flag-input');
+                        const dragHandle = row.querySelector('.drag-handle');
                         const deleteButton = row.querySelector('.toggle-delete-btn');
 
                         applyRowState(row);
@@ -394,24 +424,65 @@
                             syncOrderInputs();
                         });
 
+                        const armDrag = () => {
+                            if (lockCheckbox?.checked || deleteFlagInput?.value === '1') {
+                                row.dataset.dragReady = '0';
+                                return;
+                            }
+
+                            row.dataset.dragReady = '1';
+                        };
+
+                        const disarmDrag = () => {
+                            row.dataset.dragReady = '0';
+                        };
+
+                        dragHandle?.addEventListener('pointerdown', armDrag);
+                        dragHandle?.addEventListener('keydown', (event) => {
+                            if (event.key === ' ' || event.key === 'Enter') {
+                                armDrag();
+                            }
+                        });
+                        dragHandle?.addEventListener('pointerup', disarmDrag);
+                        dragHandle?.addEventListener('pointercancel', disarmDrag);
+                        dragHandle?.addEventListener('blur', disarmDrag);
+
                         row.addEventListener('dragstart', (event) => {
                             if (lockCheckbox?.checked || deleteFlagInput?.value === '1') {
                                 event.preventDefault();
                                 return;
                             }
 
+                            if (row.dataset.dragReady !== '1') {
+                                event.preventDefault();
+                                return;
+                            }
+
                             draggedRow = row;
+                            event.dataTransfer?.setData('text/plain', row.dataset.pageId || '');
+                            if (event.dataTransfer) {
+                                event.dataTransfer.effectAllowed = 'move';
+                            }
                             row.classList.add('bg-light-primary');
                         });
 
                         row.addEventListener('dragend', () => {
                             row.classList.remove('bg-light-primary');
                             draggedRow = null;
+                            disarmDrag();
                             syncOrderInputs();
                         });
 
                         row.addEventListener('dragover', (event) => {
                             if (!draggedRow || draggedRow === row) {
+                                return;
+                            }
+
+                            if (lockCheckbox?.checked || deleteFlagInput?.value === '1' ||
+                                hasBlockingRowBetween(
+                                    draggedRow,
+                                    row,
+                                )) {
                                 return;
                             }
 

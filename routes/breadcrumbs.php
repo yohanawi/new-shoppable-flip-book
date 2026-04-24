@@ -42,6 +42,16 @@ Breadcrumbs::for('admin.notifications.index', function (BreadcrumbTrail $trail) 
     $trail->push('Notification Audit', route('admin.notifications.index'));
 });
 
+Breadcrumbs::for('admin.customers.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('dashboard');
+    $trail->push('Customers', route('admin.customers.index'));
+});
+
+Breadcrumbs::for('admin.customers.show', function (BreadcrumbTrail $trail, User $customer) {
+    $trail->parent('admin.customers.index');
+    $trail->push($customer->name, route('admin.customers.show', $customer));
+});
+
 // Home > Dashboard > User Management
 Breadcrumbs::for('user-management.index', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
@@ -108,6 +118,12 @@ Breadcrumbs::for('tickets.show', function (BreadcrumbTrail $trail, $ticket) {
     $trail->push('Ticket #' . $ticket->id, route('tickets.show', $ticket));
 });
 
+// Home > Dashboard > Tickets > Categories
+Breadcrumbs::for('tickets.categories.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('tickets.index');
+    $trail->push('Categories', route('tickets.categories.index'));
+});
+
 // Home > Dashboard > Catalog PDFs
 Breadcrumbs::for('catalog.pdfs.index', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
@@ -124,6 +140,18 @@ Breadcrumbs::for('catalog.pdfs.create', function (BreadcrumbTrail $trail) {
 Breadcrumbs::for('catalog.pdfs.show', function (BreadcrumbTrail $trail, $pdf) {
     $trail->parent('catalog.pdfs.index');
     $trail->push($pdf->title ?? 'Untitled PDF', route('catalog.pdfs.show', $pdf));
+});
+
+// Home > Dashboard > Catalog PDFs > Share Preview Studio
+Breadcrumbs::for('catalog.pdfs.share-preview.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('catalog.pdfs.index');
+    $trail->push('Share Preview Studio', route('catalog.pdfs.share-preview.index'));
+});
+
+// Home > Dashboard > Catalog PDFs > Share Preview Studio > [PDF]
+Breadcrumbs::for('catalog.pdfs.share-preview.edit', function (BreadcrumbTrail $trail, $pdf) {
+    $trail->parent('catalog.pdfs.share-preview.index');
+    $trail->push($pdf->title ?? 'Untitled PDF', route('catalog.pdfs.share-preview.edit', $pdf));
 });
 
 // Home > Dashboard > Catalog PDFs > [PDF] > live view

@@ -149,6 +149,7 @@
                 opacity: 0;
                 transform: translateY(-30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -249,9 +250,12 @@
         <div class="modal-dialog modal-dialog-centered mw-700px">
             <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden;">
                 <!--begin::Gradient Header-->
-                <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px;">
-                    <h2 class="fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Product Details</h2>
-                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.2); border-radius: 8px;">
+                <div class="modal-header border-0 pb-0"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px;">
+                    <h2 class="fw-bold text-white mb-0" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Product Details
+                    </h2>
+                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal"
+                        style="background: rgba(255,255,255,0.2); border-radius: 8px;">
                         <i class="ki-outline ki-cross fs-1 text-white"></i>
                     </div>
                 </div>
@@ -261,19 +265,26 @@
                 <div class="modal-body pt-6 pb-8 px-10">
                     <div class="d-flex align-items-start gap-5 flex-column flex-md-row">
                         <!--begin::Image with Frame-->
-                        <div class="flex-shrink-0 position-relative" id="modalProductThumbWrapper" style="display:none;">
-                            <div style="width: 180px; height: 180px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 16px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
-                                <img id="modalProductThumb" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+                        <div class="flex-shrink-0 position-relative" id="modalProductThumbWrapper"
+                            style="display:none;">
+                            <div
+                                style="width: 180px; height: 180px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 16px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
+                                <img id="modalProductThumb" src="" alt=""
+                                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
                             </div>
                         </div>
                         <!--end::Image with Frame-->
 
                         <!--begin::Info-->
                         <div class="flex-grow-1">
-                            <div class="fs-2 fw-bold mb-3" id="modalProductName" style="color: #2d3748; line-height: 1.3;"></div>
-                            <div class="fs-6 mb-5" id="modalProductDesc" style="color: #718096; line-height: 1.6;"></div>
+                            <div class="fs-2 fw-bold mb-3" id="modalProductName"
+                                style="color: #2d3748; line-height: 1.3;"></div>
+                            <div class="fs-6 mb-5" id="modalProductDesc" style="color: #718096; line-height: 1.6;">
+                            </div>
                             <div class="d-flex align-items-center mb-4">
-                                <div class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1.5rem; padding: 10px 20px; border-radius: 10px; font-weight: 700;" id="modalProductPrice"></div>
+                                <div class="badge"
+                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1.5rem; padding: 10px 20px; border-radius: 10px; font-weight: 700;"
+                                    id="modalProductPrice"></div>
                             </div>
                         </div>
                         <!--end::Info-->
@@ -282,12 +293,15 @@
                 <!--end::Modal body-->
 
                 <!--begin::Enhanced Footer-->
-                <div class="modal-footer border-0 pt-0 justify-content-center pb-8" style="background: linear-gradient(to bottom, transparent 0%, #f7fafc 100%);">
-                    <a href="#" target="_blank" class="btn btn-gradient-primary btn-lg px-12 py-3 fw-bold" id="modalProductLink">
+                <div class="modal-footer border-0 pt-0 justify-content-center pb-8"
+                    style="background: linear-gradient(to bottom, transparent 0%, #f7fafc 100%);">
+                    <a href="#" target="_blank" class="btn btn-gradient-primary btn-lg px-12 py-3 fw-bold"
+                        id="modalProductLink">
                         <i class="ki-outline ki-shop fs-3 me-2"></i>
                         View Product
                     </a>
-                    <button type="button" class="btn btn-light btn-lg px-12 py-3 fw-bold" data-bs-dismiss="modal" style="border-radius: 12px; border: 2px solid #e2e8f0;">
+                    <button type="button" class="btn btn-light btn-lg px-12 py-3 fw-bold" data-bs-dismiss="modal"
+                        style="border-radius: 12px; border: 2px solid #e2e8f0;">
                         Close
                     </button>
                 </div>
@@ -300,11 +314,14 @@
     <!--begin::Image Modal-->
     <div class="modal fade" id="modalImage" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden; background: #000;">
+            <div class="modal-content shadow-lg"
+                style="border-radius: 20px; border: none; overflow: hidden; background: #000;">
                 <!--begin::Dark Header-->
-                <div class="modal-header border-0 pb-0" style="background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); padding: 20px 30px;">
+                <div class="modal-header border-0 pb-0"
+                    style="background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); padding: 20px 30px;">
                     <h2 class="fw-bold text-white mb-0" id="modalImageTitle">Image Preview</h2>
-                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal"
+                        style="background: rgba(255,255,255,0.1); border-radius: 8px;">
                         <i class="ki-outline ki-cross fs-1 text-white"></i>
                     </div>
                 </div>
@@ -313,7 +330,8 @@
                 <!--begin::Modal body-->
                 <div class="modal-body p-8" style="background: #000;">
                     <div class="text-center position-relative">
-                        <img id="modalImageEl" src="" alt="" class="rounded-3" style="max-width: 100%; max-height: 75vh; box-shadow: 0 20px 60px rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.1);">
+                        <img id="modalImageEl" src="" alt="" class="rounded-3"
+                            style="max-width: 100%; max-height: 75vh; box-shadow: 0 20px 60px rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.1);">
                     </div>
                 </div>
                 <!--end::Modal body-->
@@ -325,11 +343,16 @@
     <!--begin::Video Modal-->
     <div class="modal fade" id="modalVideo" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
-            <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden; background: linear-gradient(135deg, #1e1e2d 0%, #2d2d44 100%);">
+            <div class="modal-content shadow-lg"
+                style="border-radius: 20px; border: none; overflow: hidden; background: linear-gradient(135deg, #1e1e2d 0%, #2d2d44 100%);">
                 <!--begin::Video Header with Gradient-->
-                <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 30px;">
-                    <h2 class="fw-bold text-white mb-0" id="modalVideoTitle" style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);"><i class="ki-outline ki-video fs-2 me-2"></i>Video Player</h2>
-                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.2); border-radius: 8px;">
+                <div class="modal-header border-0 pb-0"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 30px;">
+                    <h2 class="fw-bold text-white mb-0" id="modalVideoTitle"
+                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.2);"><i
+                            class="ki-outline ki-video fs-2 me-2"></i>Video Player</h2>
+                    <div class="btn btn-sm btn-icon" data-bs-dismiss="modal"
+                        style="background: rgba(255,255,255,0.2); border-radius: 8px;">
                         <i class="ki-outline ki-cross fs-1 text-white"></i>
                     </div>
                 </div>
@@ -337,7 +360,9 @@
 
                 <!--begin::Modal body-->
                 <div class="modal-body p-8">
-                    <div id="modalVideoWrap" class="ratio ratio-16x9 rounded-3 overflow-hidden" style="box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 3px solid rgba(255,255,255,0.1);"></div>
+                    <div id="modalVideoWrap" class="ratio ratio-16x9 rounded-3 overflow-hidden"
+                        style="box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 3px solid rgba(255,255,255,0.1);">
+                    </div>
                 </div>
                 <!--end::Modal body-->
             </div>
@@ -369,6 +394,10 @@
                 const fullscreenBtn = document.getElementById('btnFullscreen');
                 const zoomOutBtn = document.getElementById('btnZoomOut');
                 const zoomInBtn = document.getElementById('btnZoomIn');
+                const modalVideoEl = document.getElementById('modalVideo');
+                const modalVideoWrapEl = document.getElementById('modalVideoWrap');
+                let viewportBase = null;
+                let resizeFrame = null;
 
                 const mediaBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/hotspots'));
 
@@ -484,18 +513,23 @@
                 }
 
                 function computeTurnSize(pageViewport) {
-                    const containerWidth = Math.min(1300,
-                        (document.fullscreenElement ? window.innerWidth : (document.getElementById(
-                                'kt_app_content_container')
-                            ?.clientWidth || window.innerWidth))
+                    const containerWidth = Math.min(
+                        document.fullscreenElement ? window.innerWidth : 1300,
+                        Math.max(320, (document.fullscreenElement ? window.innerWidth : document.getElementById(
+                            'kt_app_content_container')?.clientWidth) || window.innerWidth),
                     );
+                    const containerHeight = Math.max(420, (document.fullscreenElement ? window.innerHeight - 170 :
+                        window.innerHeight - 260));
 
-                    const targetSingleWidth = Math.min(620, Math.max(360, containerWidth * 0.48));
+                    const isMobile = window.innerWidth < 992;
+                    const widthRatio = isMobile ? 0.88 : 0.48;
+                    const maxWidthByHeight = Math.floor((containerHeight * pageViewport.width) / pageViewport.height);
+                    const targetSingleWidth = Math.min(640, maxWidthByHeight, Math.max(360, containerWidth *
+                        widthRatio));
                     const scale = targetSingleWidth / pageViewport.width;
                     const w = Math.floor(pageViewport.width * scale);
                     const h = Math.floor(pageViewport.height * scale);
 
-                    const isMobile = window.innerWidth < 992;
                     const display = isMobile ? 'single' : 'double';
                     return {
                         w,
@@ -533,7 +567,7 @@
                         console.error('Modal element not found: ' + modalId);
                         return;
                     }
-                    
+
                     // Use jQuery Bootstrap modal method (more compatible with Laravel's Bootstrap setup)
                     if (window.$ && typeof window.$.fn.modal === 'function') {
                         $(el).modal('show');
@@ -554,11 +588,29 @@
                                 return;
                             }
                             modalInstance.show();
-                        } catch(e) {
+                        } catch (e) {
                             console.error('Failed to show modal:', e);
                         }
                     }
                 }
+
+                function stopModalVideoPlayback() {
+                    if (!modalVideoWrapEl) return;
+
+                    modalVideoWrapEl.querySelectorAll('video').forEach((video) => {
+                        video.pause();
+                        video.removeAttribute('src');
+                        video.load();
+                    });
+
+                    modalVideoWrapEl.querySelectorAll('iframe').forEach((iframe) => {
+                        iframe.setAttribute('src', 'about:blank');
+                    });
+
+                    modalVideoWrapEl.innerHTML = '';
+                }
+
+                modalVideoEl?.addEventListener('hide.bs.modal', stopModalVideoPlayback);
 
                 function handleAction(h) {
                     const $flip = $('#flipbook');
@@ -608,8 +660,8 @@
 
                     if (h.action_type === 'popup_video') {
                         document.getElementById('modalVideoTitle').textContent = h.title || 'Video Player';
-                        const wrap = document.getElementById('modalVideoWrap');
-                        wrap.innerHTML = '';
+                        const wrap = modalVideoWrapEl;
+                        stopModalVideoPlayback();
 
                         if (h.popup_video_url) {
                             const iframe = document.createElement('iframe');
@@ -694,10 +746,10 @@
                     }
 
                     const firstPage = await pdf.getPage(pages[0].page_number);
-                    const rawViewport = firstPage.getViewport({
+                    viewportBase = firstPage.getViewport({
                         scale: 1
                     });
-                    const sizing = computeTurnSize(rawViewport);
+                    const sizing = computeTurnSize(viewportBase);
 
                     const totalPages = pages.length;
                     setPageIndicator(1, totalPages);
@@ -769,8 +821,8 @@
                     }
 
                     const $flipbook = $('#flipbook');
-                    const baseBookWidth = (sizing.display === 'double' ? sizing.w * 2 : sizing.w);
-                    const baseBookHeight = sizing.h;
+                    let baseBookWidth = (sizing.display === 'double' ? sizing.w * 2 : sizing.w);
+                    let baseBookHeight = sizing.h;
 
                     let zoom = 1.0;
                     const zoomMin = 0.8;
@@ -790,6 +842,45 @@
                             meta: {
                                 zoom
                             }
+                        });
+                    }
+
+                    function applyBookLayout() {
+                        if (!viewportBase) {
+                            return;
+                        }
+
+                        const sizing = computeTurnSize(viewportBase);
+                        const currentPage = $flipbook.turn('page');
+                        baseBookWidth = sizing.display === 'double' ? sizing.w * 2 : sizing.w;
+                        baseBookHeight = sizing.h;
+
+                        const w = Math.floor(baseBookWidth * zoom);
+                        const h = Math.floor(baseBookHeight * zoom);
+
+                        flipbookEl.style.width = w + 'px';
+                        flipbookEl.style.height = h + 'px';
+
+                        try {
+                            $flipbook.turn('display', sizing.display);
+                        } catch (e) {}
+
+                        try {
+                            $flipbook.turn('size', w, h);
+                        } catch (e) {}
+
+                        try {
+                            $flipbook.turn('page', currentPage);
+                        } catch (e) {}
+                    }
+
+                    function scheduleBookLayout() {
+                        if (resizeFrame) {
+                            window.cancelAnimationFrame(resizeFrame);
+                        }
+
+                        resizeFrame = window.requestAnimationFrame(() => {
+                            applyBookLayout();
                         });
                     }
 
@@ -816,7 +907,7 @@
                             try {
                                 flipSound.currentTime = 0;
                                 flipSound.play().catch(() => {});
-                            } catch (e) {} 
+                            } catch (e) {}
                         }
                     });
 
@@ -873,7 +964,9 @@
 
                     document.addEventListener('fullscreenchange', () => {
                         updateFullscreenLabel();
+                        scheduleBookLayout();
                     });
+                    window.addEventListener('resize', scheduleBookLayout);
                     updateFullscreenLabel();
                 }
 

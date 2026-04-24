@@ -39,11 +39,11 @@ mix.sass('resources/mix/plugins.scss', `public/assets/plugins/global/plugins.bun
     });
 }).sourceMaps(!mix.inProduction())
     // .setResourceRoot('./')
-    .options({processCssUrls: false})
+    .options({ processCssUrls: false })
     .scripts(require('./resources/mix/plugins.js'), `public/assets/plugins/global/plugins.bundle.js`);
 
 // Build theme css/js
-mix.sass(`${dir}/sass/style.scss`, `public/assets/css/style.bundle.css`, {sassOptions: {includePaths: ['node_modules']}})
+mix.sass(`${dir}/sass/style.scss`, `public/assets/css/style.bundle.css`, { sassOptions: { includePaths: ['node_modules'] } })
     // .options({processCssUrls: false})
     .scripts(require(`./resources/mix/scripts.js`), `public/assets/js/scripts.bundle.js`);
 

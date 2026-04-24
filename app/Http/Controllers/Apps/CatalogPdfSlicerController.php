@@ -507,11 +507,7 @@ class CatalogPdfSlicerController extends Controller
     private function syncHotspotMediaForAction(CatalogPdfHotspot $hotspot): void
     {
         $action = $hotspot->action_type;
-        $usesThumbnail = in_array($action, [
-            CatalogPdfHotspot::ACTION_INTERNAL_PAGE,
-            CatalogPdfHotspot::ACTION_EXTERNAL_LINK,
-            CatalogPdfHotspot::ACTION_POPUP_WINDOW,
-        ], true);
+        $usesThumbnail = $action === CatalogPdfHotspot::ACTION_POPUP_WINDOW;
 
         if (!$usesThumbnail) {
             $this->deleteFileIfExists($hotspot->thumbnail_disk, $hotspot->thumbnail_path);

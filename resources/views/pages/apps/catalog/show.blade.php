@@ -20,110 +20,25 @@
         </div>
     @endif
 
-    <div class="card border-0 shadow-sm overflow-hidden mb-8">
-        <div class="card-body p-0">
-            <div class="p-10 p-lg-15" style="background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);">
-                <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center">
-                    <div class="mw-600px">
-                        <span class="badge badge-light-primary mb-4">Workflow hub</span>
-                        <h1 class="text-white fw-bold mb-4">{{ $pdf->title }}</h1>
-                        <div class="d-flex flex-wrap gap-3">
-                            <span
-                                class="badge badge-light-{{ $pdf->visibility === \App\Models\CatalogPdf::VISIBILITY_PUBLIC ? 'success' : 'warning' }} text-capitalize">
-                                {{ $pdf->visibility }}
-                            </span>
-
-                            @if ($pdf->original_filename)
-                                <span class="badge badge-light">{{ $pdf->original_filename }}</span>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="d-flex flex-wrap gap-3">
-                        <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-light">
-                            Back
-                        </a>
-                        <a href="{{ route('catalog.pdfs.share', $pdf) }}" class="btn btn-light-success" target="_blank">
-                            Open Shared PDF
-                        </a>
-                        <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-primary">
-                            Download PDF
-                        </a>
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                            data-bs-target="#deleteModal">
-                            Delete PDF
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex flex-wrap gap-3 mb-8 justify-content-between">
+        <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-light border">
+            <i class="ki-outline ki-arrow-left fs-2"></i> Back
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <a href="{{ route('catalog.pdfs.share', $pdf) }}" class="btn btn-light-success" target="_blank">
+                Open Shared PDF
+            </a>
+            <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-primary">
+                Download PDF
+            </a>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                Delete PDF
+            </button>
         </div>
     </div>
 
     <div class="row g-8">
-        <div class="col-xl-7">
-            <div class="card border-0 shadow-sm mb-8">
-                <div class="card-header border-0 pt-8">
-                    <div class="card-title flex-column align-items-start">
-                        <h3 class="fw-bold text-gray-900 mb-1">Use all functions on this PDF</h3>
-                        <div class="text-muted">Open any tool below. They all work on the same uploaded file.</div>
-                    </div>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="row g-6">
-                        <div class="col-md-4">
-                            <div class="border rounded-4 h-100 p-6 bg-light-primary d-flex flex-column">
-                                <div class="symbol symbol-55px mb-5">
-                                    <span class="symbol-label bg-white">
-                                        <i class="ki-outline ki-notepad fs-2x text-primary"></i>
-                                    </span>
-                                </div>
-                                <h4 class="fw-bold text-gray-900 mb-3">Page Management</h4>
-                                <div class="text-muted fs-7 mb-6 flex-grow-1">
-                                    Reorder pages, rename them, hide pages, lock pages, and replace the PDF if needed.
-                                </div>
-
-                                <a href="{{ route('catalog.pdfs.manage', $pdf) }}"
-                                    class="btn btn-primary w-100">Open</a>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded-4 h-100 p-6 bg-light-info d-flex flex-column">
-                                <div class="symbol symbol-55px mb-5">
-                                    <span class="symbol-label bg-white">
-                                        <i class="ki-outline ki-rocket fs-2x text-info"></i>
-                                    </span>
-                                </div>
-                                <h4 class="fw-bold text-gray-900 mb-3">Flip Physics</h4>
-                                <div class="text-muted fs-7 mb-6 flex-grow-1">
-                                    Change page flip behavior, duration, elevation, display mode, and render quality.
-                                </div>
-
-                                <a href="{{ route('catalog.pdfs.flip-physics.edit', $pdf) }}"
-                                    class="btn btn-info text-white w-100">Open</a>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="border rounded-4 h-100 p-6 bg-light-success d-flex flex-column">
-                                <div class="symbol symbol-55px mb-5">
-                                    <span class="symbol-label bg-white">
-                                        <i class="ki-outline ki-shop fs-2x text-success"></i>
-                                    </span>
-                                </div>
-                                <h4 class="fw-bold text-gray-900 mb-3">Slicer</h4>
-                                <div class="text-muted fs-7 mb-6 flex-grow-1">
-                                    Build interactive hotspots, popup content, internal links, and shoppable areas.
-                                </div>
-
-                                <a href="{{ route('catalog.pdfs.slicer.edit', $pdf) }}"
-                                    class="btn btn-success w-100">Open</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <div class="col-xl-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header border-0 pt-8">
                     <div class="card-title flex-column align-items-start">
@@ -141,7 +56,101 @@
             </div>
         </div>
 
-        <div class="col-xl-5">
+        <div class="col-xl-4">
+            <div class="card border-0 shadow-sm mb-8">
+                <div class="card-header border-0 pt-8">
+                    <div class="card-title flex-column align-items-start">
+                        <h3 class="fw-bold text-gray-900 mb-1">PDF Toolkit</h3>
+                        <div class="text-muted">Manage your assets, physics, and interactive hotspots in one place.
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="row g-6">
+                        <div class="col-md-6 col-xl-12">
+                            <div class="border rounded-4 h-100 p-6 bg-light-primary d-flex flex-column">
+                                <div class="d-flex align-items-center flex-row justify-content-between mb-2">
+                                    <div class="d-flex align-items-center flex-row gap-5">
+                                        <div class="symbol symbol-40px">
+                                            <span class="symbol-label bg-white">
+                                                <i class="ki-outline ki-notepad fs-2x text-primary"></i>
+                                            </span>
+                                        </div>
+                                        <h4 class="fw-bold text-gray-900">Page Management</h4>
+                                    </div>
+                                    <a href="{{ route('catalog.pdfs.manage', $pdf) }}"
+                                        class="btn btn-primary w-28">Open</a>
+                                </div>
+                                <div class="text-muted fs-7 flex-grow-1">
+                                    Reorder pages, rename them, hide pages, lock pages, and replace the PDF if needed.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-12">
+                            <div class="border rounded-4 h-100 p-6 bg-light-info d-flex flex-column">
+                                <div class="d-flex align-items-center flex-row justify-content-between mb-2">
+                                    <div class="d-flex align-items-center flex-row gap-5">
+                                        <div class="symbol symbol-40px">
+                                            <span class="symbol-label bg-white">
+                                                <i class="ki-outline ki-rocket fs-2x text-info"></i>
+                                            </span>
+                                        </div>
+                                        <h4 class="fw-bold text-gray-900">Flip Physics</h4>
+                                    </div>
+                                    <a href="{{ route('catalog.pdfs.flip-physics.edit', $pdf) }}"
+                                        class="btn btn-info w-28 text-white">Open</a>
+                                </div>
+                                <div class="text-muted fs-7 flex-grow-1">
+                                    Change page flip behavior, duration, elevation, display mode, and render quality.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-12">
+                            <div class="border rounded-4 h-100 p-6 bg-light-warning d-flex flex-column">
+                                <div class="d-flex align-items-center flex-row justify-content-between mb-2">
+                                    <div class="d-flex align-items-center flex-row gap-5">
+                                        <div class="symbol symbol-40px">
+                                            <span class="symbol-label bg-white">
+                                                <i class="ki-outline ki-picture fs-2x text-warning"></i>
+                                            </span>
+                                        </div>
+                                        <h4 class="fw-bold text-gray-900">Share Preview Studio</h4>
+                                    </div>
+                                    <a href="{{ route('catalog.pdfs.share-preview.edit', $pdf) }}"
+                                        class="btn btn-warning w-28">Open</a>
+                                </div>
+                                <div class="text-muted fs-7 flex-grow-1">
+                                    Customize the public share preview with background media, logo branding, title text,
+                                    and exact logo placement.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-12">
+                            <div class="border rounded-4 h-100 p-6 bg-light-success d-flex flex-column">
+                                <div class="d-flex align-items-center flex-row justify-content-between mb-2">
+                                    <div class="d-flex align-items-center flex-row gap-5">
+                                        <div class="symbol symbol-40px">
+                                            <span class="symbol-label bg-white">
+                                                <i class="ki-outline ki-shop fs-2x text-success"></i>
+                                            </span>
+                                        </div>
+                                        <h4 class="fw-bold text-gray-900">Slicer</h4>
+                                    </div>
+                                    <a href="{{ route('catalog.pdfs.slicer.edit', $pdf) }}"
+                                        class="btn btn-success w-28">Open</a>
+                                </div>
+                                <div class="text-muted fs-7 flex-grow-1">
+                                    Build interactive hotspots, popup content, internal links, and shoppable areas.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card border-0 shadow-sm mb-8">
                 <div class="card-body p-8">
                     <h3 class="fw-bold text-gray-900 mb-5">PDF details</h3>

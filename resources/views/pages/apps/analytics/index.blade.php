@@ -1,5 +1,8 @@
 <x-default-layout>
 
+    @php($analyticsHeading = $isAdminView ? 'Catalog Analytics Overview' : 'Customer Book Analytics')
+    @php($analyticsDescription = $isAdminView ? 'Review engagement across all catalog owners or focus on one owner.' : 'Track book views, readers, total reading time, and slicer hotspot clicks for your catalog books.')
+
     @section('title')
         Analytics
     @endsection
@@ -58,16 +61,50 @@
     <div class="card mb-8">
         <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
             <div>
-                <h3 class="mb-1">Customer Book Analytics</h3>
-                <div class="text-muted">Track book views, readers, total reading time, and slicer hotspot clicks for
-                    your catalog books.</div>
+                <h3 class="mb-1">{{ $analyticsHeading }}</h3>
+                <div class="text-muted">{{ $analyticsDescription }}</div>
             </div>
             <div class="d-flex gap-3 align-items-center">
+                @if ($isAdminView)
+                    <div class="badge badge-light-primary fs-6 px-4 py-3">Owners:
+                        {{ number_format($summary['owners_count']) }}</div>
+                @endif
                 <div class="badge badge-light-dark fs-6 px-4 py-3">Slice Clicks:
                     {{ number_format($summary['slice_click_count']) }}</div>
                 <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-light-primary">Manage Books</a>
             </div>
         </div>
+
+        @if ($isAdminView)
+            <div class="card-footer border-0 pt-0 pb-6 px-6 px-lg-9">
+                <form method="GET" action="{{ route('analytics.index') }}" class="row g-3 align-items-end">
+                    <div class="col-lg-5 col-xl-4">
+                        <label class="form-label fw-bold text-gray-900">Owner scope</label>
+                        <select name="owner" class="form-select form-select-solid" data-control="select2"
+                            data-hide-search="false">
+                            <option value="">All catalog owners</option>
+                            @foreach ($ownerOptions as $ownerOption)
+                                <option value="{{ $ownerOption->id }}"
+                                    {{ (string) old('owner', $selectedOwner?->id) === (string) $ownerOption->id ? 'selected' : '' }}>
+                                    {{ $ownerOption->name ?: $ownerOption->email }}
+                                    @if ($ownerOption->name && $ownerOption->email)
+                                        ({{ $ownerOption->email }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </div>
+                    @if ($selectedOwner)
+                        <div class="col-auto">
+                            <a href="{{ route('analytics.index') }}" class="btn btn-light">Clear</a>
+                        </div>
+                    @endif
+                </form>
+            </div>
+        @endif
     </div>
 
     <div class="card">
@@ -79,7 +116,9 @@
         <div class="card-body pt-0">
             @if ($books->isEmpty())
                 <div class="py-15 text-center">
-                    <div class="text-gray-500 fs-5 mb-5">You do not have any books yet.</div>
+                    <div class="text-gray-500 fs-5 mb-5">
+                        {{ $isAdminView ? 'No catalog books match the current analytics scope yet.' : 'You do not have any books yet.' }}
+                    </div>
                     <a href="{{ route('catalog.pdfs.create') }}" class="btn btn-primary">Upload Your First Book</a>
                 </div>
             @else
@@ -88,6 +127,9 @@
                         <thead>
                             <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
                                 <th>Book</th>
+                                @if ($isAdminView)
+                                    <th>Owner</th>
+                                @endif
                                 <th>Template</th>
                                 <th>Book Views</th>
                                 <th>Readers</th>
@@ -108,6 +150,15 @@
                                                 class="text-muted fs-7">{{ $book['pdf']->original_filename ?: 'Untitled PDF' }}</span>
                                         </div>
                                     </td>
+                                    @if ($isAdminView)
+                                        <td>
+                                            <div class="d-flex flex-column">
+                                                <span
+                                                    class="text-gray-900 fw-bold">{{ $book['owner']?->name ?: 'Unknown owner' }}</span>
+                                                <span class="text-muted fs-7">{{ $book['owner']?->email }}</span>
+                                            </div>
+                                        </td>
+                                    @endif
                                     <td>
                                         <span class="badge badge-light">
                                             {{ \App\Models\CatalogPdf::templateTypeOptions()[$book['pdf']->template_type] ?? $book['pdf']->template_type }}

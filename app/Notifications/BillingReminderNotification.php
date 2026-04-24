@@ -6,9 +6,8 @@ use App\Models\BillingInvoice;
 use App\Models\Subscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
 
-class BillingReminderNotification extends Notification
+class BillingReminderNotification extends RealtimeDatabaseNotification
 {
     use Queueable;
 
@@ -28,9 +27,9 @@ class BillingReminderNotification extends Notification
         private readonly ?Subscription $subscription = null,
     ) {}
 
-    public function via(object $notifiable): array
+    protected function additionalChannels(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -47,7 +46,7 @@ class BillingReminderNotification extends Notification
         return $mail->line('You can manage billing any time from your account dashboard.');
     }
 
-    public function toArray(object $notifiable): array
+    protected function notificationData(object $notifiable): array
     {
         return [
             'type' => $this->type,

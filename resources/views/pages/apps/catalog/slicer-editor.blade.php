@@ -8,90 +8,17 @@
         {{ Breadcrumbs::render('catalog.pdfs.slicer.edit', $pdf) }}
     @endsection
 
-    <style>
-        .slicer-canvas-wrap {
-            width: 100%;
-            overflow: auto;
-            border: 1px dashed var(--bs-gray-300);
-            border-radius: 0.475rem;
-            background: var(--bs-body-bg);
-        }
-
-        .slicer-canvas-toolbar {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .hotspot-list {
-            max-height: 320px;
-            overflow: auto;
-        }
-
-        .hotspot-list .list-group-item {
-            cursor: pointer;
-        }
-
-        .hotspot-list .list-group-item.active {
-            border-color: var(--bs-primary);
-            background: rgba(var(--bs-primary-rgb), 0.1);
-            color: var(--bs-gray-900);
-        }
-
-        #thumbnailPreview {
-            position: relative;
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
-            border: 2px solid var(--bs-gray-300);
-            border-radius: 0.475rem;
-            overflow: hidden;
-        }
-
-        #thumbnailPreview img,
-        #thumbnailPreview canvas {
-            width: 100%;
-            display: block;
-        }
-
-        .thumbnail-hotspot {
-            position: absolute;
-            border: 2px solid rgba(var(--bs-primary-rgb), 0.85);
-            background: rgba(var(--bs-primary-rgb), 0.15);
-            pointer-events: none;
-            transition: all 0.2s ease;
-        }
-
-        .thumbnail-hotspot.active {
-            border-color: rgba(var(--bs-success-rgb), 1);
-            background: rgba(var(--bs-success-rgb), 0.2);
-        }
-    </style>
-
-    <div class="card border-0 shadow-sm overflow-hidden mb-8">
-        <div class="card-body p-0">
-            <div class="p-10 p-lg-15" style="background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);">
-                <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center">
-                    <div class="mw-500px">
-                        <span class="badge badge-light-primary mb-4">Slicer</span>
-                        <h1 class="text-white fw-bold mb-4">Build hotspots for {{ $pdf->title }}</h1>
-                        <div class="text-white opacity-75 fs-5">
-                            This screen is for interactive and shoppable hotspots only. Choose the page, draw the
-                            hotspot, and save the action data. It uses the same PDF pages managed in Page Management.
-                        </div>
-                    </div>
-                    <div class="d-flex flex-wrap gap-3">
-                        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light">Back</a>
-                        <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}"
-                            class="btn btn-light-primary">Shoppable Preview</a>
-                        <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
-                            @csrf
-                            <button type="submit" class="btn btn-light-success">Generate Page Images</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5">
+        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light border">
+            <i class="ki-outline ki-arrow-left fs-2"></i> Back
+        </a>
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}" class="btn btn-light-primary">Shoppable
+                Preview</a>
+            <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
+                @csrf
+                <button type="submit" class="btn btn-light-success">Generate Page Images</button>
+            </form>
         </div>
     </div>
 
@@ -102,49 +29,24 @@
         </div>
     @endif
 
-    <div class="row g-6 g-xl-8 mb-8">
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Current function</div>
-                    <div class="fw-bold text-gray-900 fs-3">Slicer</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Pages</div>
-                    <div class="fw-bold text-gray-900 fs-3">{{ $pages->count() }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Visibility</div>
-                    <div class="fw-bold text-gray-900 fs-3 text-capitalize">{{ $pdf->visibility }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Source file</div>
-                    <div class="fw-bold text-gray-900 fs-6">{{ $pdf->original_filename ?: 'Uploaded PDF' }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="row g-5">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header">
-                    <div class="card-title d-flex align-items-center gap-3 flex-wrap">
-                        <div class="d-flex align-items-center gap-2">
+                    <div class="card-title d-flex align-items-center gap-3 flex-wrap justify-content-between">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
                             <span class="text-muted fw-semibold">Page</span>
-                            <select class="form-select form-select-sm" id="pageSelect" style="min-width: 220px;">
+                            <button type="button" class="btn btn-sm btn-light" id="btnPagePrev">
+                                <i class="bi bi-chevron-left"></i> Previous
+                            </button>
+                            <div class="border border-gray-300 rounded-3 bg-body px-4 py-3">
+                                <div class="text-gray-900 fw-semibold lh-sm" id="pageNavTitle">Select a page</div>
+                                <div class="text-muted fs-8 lh-sm mt-1" id="pageNavMeta">Page 0 of 0</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-light" id="btnPageNext">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </button>
+                            <select class="d-none" id="pageSelect">
                                 @foreach ($pages as $p)
                                     <option value="{{ $p->id }}" data-page-number="{{ $p->page_number }}">
                                         {{ $p->title ?: 'Page ' . $p->page_number }}
@@ -153,7 +55,7 @@
                             </select>
                         </div>
 
-                        <div class="slicer-canvas-toolbar">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="text-muted fw-semibold">Tool</span>
                             <button type="button" class="btn btn-sm btn-light" data-tool="select"
                                 id="toolSelect">Select</button>
@@ -165,8 +67,9 @@
                                 id="toolFree">Free</button>
                             <div class="vr"></div>
                             <button type="button" class="btn btn-sm btn-light" id="btnClear">Clear Selection</button>
-                            <button type="button" class="btn btn-sm btn-light" id="btnDeleteSelected">Delete
-                                Selected</button>
+                            <button type="button" class="btn btn-sm btn-light" id="btnDeleteSelected">
+                                Delete Selected
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -185,25 +88,10 @@
                             </form>
                         </div>
                     @else
-                        <div class="slicer-canvas-wrap p-3">
+                        <div class="w-100 overflow-auto border border-dashed border-gray-300 rounded-3 bg-body p-3">
                             <canvas id="slicerCanvas"></canvas>
                         </div>
                         <div class="text-muted mt-3">Draw a hotspot area on the page, then fill the details and save.
-                        </div>
-
-                        <!-- Thumbnail Preview -->
-                        <div class="mt-5">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">Thumbnail Preview</h5>
-                                <button type="button" class="btn btn-sm btn-light" id="btnRefreshPreview">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                                </button>
-                            </div>
-                            <div id="thumbnailPreview">
-                                <canvas id="thumbnailCanvas"></canvas>
-                                <div id="thumbnailHotspots"></div>
-                            </div>
-                            <div class="text-muted mt-2 small">Shows all hotspots on this page with borders</div>
                         </div>
                     @endif
                 </div>
@@ -213,9 +101,57 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm mb-5">
                 <div class="card-header">
-                    <div class="card-title">Hotspot Details</div>
+                    <div class="card-title d-flex justify-content-between align-items-center w-100 gap-3">
+                        <span>Thumbnail Preview</span>
+                        <button type="button" class="btn btn-sm btn-light" id="btnRefreshPreview">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
+                    <div id="thumbnailPreview"
+                        class="position-relative w-100 mx-auto border-2 border-gray-300 rounded-3 overflow-hidden bg-light">
+                        <canvas id="thumbnailCanvas" class="w-100 d-block"></canvas>
+                        <div id="thumbnailHotspots" class="position-absolute top-0 start-0 w-100 h-100"></div>
+                    </div>
+                    <div class="text-muted mt-2 small">Shows all hotspots on this page with borders</div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <div class="card-title d-flex justify-content-between align-items-center w-100 gap-3">
+                        <span>Hotspots on Page</span>
+                        <button type="button" class="btn btn-sm btn-light-primary" id="btnOpenHotspotModal">
+                            New Hotspot
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mh-300px overflow-auto">
+                        <div class="list-group" id="hotspotList"></div>
+                    </div>
+                    <div class="text-muted mt-3">Click a hotspot to edit. Use Delete Selected to remove from canvas,
+                        then save.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="hotspotModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <div>
+                        <h3 class="fw-bold text-gray-900 mb-1" id="hotspotModalTitle">Create Hotspot</h3>
+                        <div class="text-muted fs-7">Fill in the details for the selected area and save it.</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-icon btn-active-color-primary"
+                        data-bs-dismiss="modal">
+                        <i class="ki-outline ki-cross fs-1"></i>
+                    </button>
+                </div>
+                <div class="modal-body pt-7">
                     <form id="hotspotForm">
                         @csrf
                         <input type="hidden" id="hotspotId" value="">
@@ -226,105 +162,106 @@
                         <input type="hidden" name="w" id="bboxW" value="">
                         <input type="hidden" name="h" id="bboxH" value="">
 
-                        <div class="mb-4">
-                            <label class="form-label">Action</label>
-                            <select class="form-select" name="action_type" id="actionType" data-control="select2"
-                                data-hide-search="true">
-                                @foreach ($actionOptions as $k => $label)
-                                    <option value="{{ $k }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
+                        <div
+                            class="notice d-flex bg-light-primary rounded border-primary border border-dashed p-6 mb-8">
+                            <div class="d-flex flex-column gap-1">
+                                <div class="fw-bold text-gray-900">Selected Area</div>
+                                <div class="text-muted fs-7">Rectangle, polygon, or free shape coordinates are captured
+                                    from the canvas and linked to this hotspot automatically.</div>
+                            </div>
                         </div>
 
-                        <div class="form-check form-switch mb-4">
-                            <input class="form-check-input" type="checkbox" role="switch" name="is_active"
-                                id="isActive" checked>
-                            <label class="form-check-label" for="isActive">Status (Active)</label>
+                        <div class="row g-6">
+                            <div class="col-md-6">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action_type" id="actionType"
+                                    data-control="select2" data-hide-search="true"
+                                    data-dropdown-parent="#hotspotModal">
+                                    @foreach ($actionOptions as $k => $label)
+                                        <option value="{{ $k }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 d-flex align-items-end">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" name="is_active"
+                                        id="isActive" checked>
+                                    <label class="form-check-label" for="isActive">Status (Active)</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 common-field">
+                                <label class="form-label">Title</label>
+                                <input type="text" class="form-control" name="title" id="title"
+                                    placeholder="Title">
+                            </div>
+
+                            <div class="col-md-6 common-field">
+                                <label class="form-label">Color</label>
+                                <input type="text" class="form-control" name="color" id="color"
+                                    placeholder="#FF0000 or any label">
+                            </div>
+
+                            <div class="col-12 link-field">
+                                <label class="form-label">Link</label>
+                                <input type="text" class="form-control" name="link" id="link"
+                                    placeholder="https://...">
+                            </div>
+
+                            <div class="col-md-6 internal-field">
+                                <label class="form-label">Internal Page Number</label>
+                                <input type="number" class="form-control" name="internal_page_number"
+                                    id="internalPage" min="1" step="1">
+                            </div>
+
+                            <div class="col-12 popup-window-field">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" id="description" rows="3"></textarea>
+                            </div>
+
+                            <div class="col-md-6 popup-window-field">
+                                <label class="form-label">Price</label>
+                                <input type="number" class="form-control" name="price" id="price"
+                                    min="0" step="0.01">
+                            </div>
+
+                            <div class="col-12 thumb-field">
+                                <label class="form-label">Thumbnail Image</label>
+                                <input type="file" class="form-control" name="thumbnail" id="thumbnail"
+                                    accept="image/*">
+                                <div class="form-text mt-2" id="thumbnailCurrent"></div>
+                            </div>
+
+                            <div class="col-12 popup-image-field">
+                                <label class="form-label">Popup Image</label>
+                                <input type="file" class="form-control" name="popup_image" id="popupImage"
+                                    accept="image/*">
+                                <div class="form-text mt-2" id="popupImageCurrent"></div>
+                            </div>
+
+                            <div class="col-12 popup-video-field">
+                                <label class="form-label">Popup Video (Upload)</label>
+                                <input type="file" class="form-control" name="popup_video" id="popupVideo"
+                                    accept="video/mp4,video/webm">
+                            </div>
+
+                            <div class="col-12 popup-video-field">
+                                <label class="form-label">Popup Video URL</label>
+                                <input type="text" class="form-control" name="popup_video_url" id="popupVideoUrl"
+                                    placeholder="https://...">
+                                <div class="form-text mt-2" id="popupVideoCurrent"></div>
+                            </div>
                         </div>
 
-                        <div class="mb-4 common-field">
-                            <label class="form-label">Title</label>
-                            <input type="text" class="form-control" name="title" id="title"
-                                placeholder="Title">
-                        </div>
-
-                        <div class="mb-4 common-field">
-                            <label class="form-label">Color</label>
-                            <input type="text" class="form-control" name="color" id="color"
-                                placeholder="#FF0000 or any label">
-                        </div>
-
-                        <div class="mb-4 link-field">
-                            <label class="form-label">Link</label>
-                            <input type="text" class="form-control" name="link" id="link"
-                                placeholder="https://...">
-                            <div class="form-text">For Internal Page, you can also set the page number below.</div>
-                        </div>
-
-                        <div class="mb-4 internal-field">
-                            <label class="form-label">Internal Page Number</label>
-                            <input type="number" class="form-control" name="internal_page_number" id="internalPage"
-                                min="1" step="1">
-                        </div>
-
-                        <div class="mb-4 popup-window-field">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" name="description" id="description" rows="3"></textarea>
-                        </div>
-
-                        <div class="mb-4 popup-window-field">
-                            <label class="form-label">Price</label>
-                            <input type="number" class="form-control" name="price" id="price" min="0"
-                                step="0.01">
-                        </div>
-
-                        <div class="mb-4 thumb-field">
-                            <label class="form-label">Thumbnail Image</label>
-                            <input type="file" class="form-control" name="thumbnail" id="thumbnail"
-                                accept="image/*">
-                            <div class="form-text mt-2" id="thumbnailCurrent"></div>
-                        </div>
-
-                        <div class="mb-4 popup-image-field">
-                            <label class="form-label">Popup Image</label>
-                            <input type="file" class="form-control" name="popup_image" id="popupImage"
-                                accept="image/*">
-                            <div class="form-text mt-2" id="popupImageCurrent"></div>
-                        </div>
-
-                        <div class="mb-4 popup-video-field">
-                            <label class="form-label">Popup Video (Upload)</label>
-                            <input type="file" class="form-control" name="popup_video" id="popupVideo"
-                                accept="video/mp4,video/webm">
-                        </div>
-
-                        <div class="mb-4 popup-video-field">
-                            <label class="form-label">Popup Video URL</label>
-                            <input type="text" class="form-control" name="popup_video_url" id="popupVideoUrl"
-                                placeholder="https://...">
-                            <div class="form-text mt-2" id="popupVideoCurrent"></div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary" id="btnSave">Save Hotspot</button>
-                            <button type="button" class="btn btn-light" id="btnNew">New</button>
-                        </div>
-
-                        <div class="text-muted mt-3" id="saveStatus"></div>
+                        <div class="text-muted mt-4" id="saveStatus"></div>
                     </form>
                 </div>
-            </div>
-
-            <div class="card border-0 shadow-sm">
-                <div class="card-header">
-                    <div class="card-title">Hotspots on Page</div>
-                </div>
-                <div class="card-body">
-                    <div class="hotspot-list">
-                        <div class="list-group" id="hotspotList"></div>
-                    </div>
-                    <div class="text-muted mt-3">Click a hotspot to edit. Use Delete Selected to remove from canvas,
-                        then save.</div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" id="btnNew">New</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" form="hotspotForm" class="btn btn-primary" id="btnSave">Save
+                        Hotspot</button>
                 </div>
             </div>
         </div>
@@ -347,9 +284,17 @@
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                 const pageSelect = document.getElementById('pageSelect');
+                const pagePrevButton = document.getElementById('btnPagePrev');
+                const pageNextButton = document.getElementById('btnPageNext');
+                const pageNavTitle = document.getElementById('pageNavTitle');
+                const pageNavMeta = document.getElementById('pageNavMeta');
                 const hotspotList = document.getElementById('hotspotList');
                 const saveStatus = document.getElementById('saveStatus');
                 const saveButton = document.getElementById('btnSave');
+                const hotspotModalEl = document.getElementById('hotspotModal');
+                const hotspotModalTitleEl = document.getElementById('hotspotModalTitle');
+                const openHotspotModalButton = document.getElementById('btnOpenHotspotModal');
+                const hotspotModal = hotspotModalEl ? new bootstrap.Modal(hotspotModalEl) : null;
 
                 const formEl = document.getElementById('hotspotForm');
                 const hotspotIdEl = document.getElementById('hotspotId');
@@ -378,6 +323,16 @@
                 let polygonTemp = null;
                 let pdfDoc = null;
 
+                function openHotspotModal(mode = 'create') {
+                    if (!hotspotModal) return;
+
+                    if (hotspotModalTitleEl) {
+                        hotspotModalTitleEl.textContent = mode === 'edit' ? 'Edit Hotspot' : 'Create Hotspot';
+                    }
+
+                    hotspotModal.show();
+                }
+
                 function setStatus(text, tone = 'muted') {
                     saveStatus.textContent = text;
                     saveStatus.className = 'mt-3';
@@ -391,6 +346,9 @@
                 function setFormMode(isEditing) {
                     if (!saveButton) return;
                     saveButton.textContent = isEditing ? 'Update Hotspot' : 'Save Hotspot';
+                    if (hotspotModalTitleEl) {
+                        hotspotModalTitleEl.textContent = isEditing ? 'Edit Hotspot' : 'Create Hotspot';
+                    }
                 }
 
                 function clearFileInputs() {
@@ -470,8 +428,11 @@
                     if (!hotspotList) return;
 
                     hotspotList.querySelectorAll('[data-hotspot-id]').forEach(item => {
-                        item.classList.toggle('active', hotspotId !== null && item.dataset.hotspotId === String(
-                            hotspotId));
+                        const isActive = hotspotId !== null && item.dataset.hotspotId === String(hotspotId);
+                        item.classList.toggle('bg-light-primary', isActive);
+                        item.classList.toggle('border-primary', isActive);
+                        item.classList.toggle('text-gray-900', isActive);
+                        item.classList.toggle('fw-bold', isActive);
                     });
                 }
 
@@ -494,10 +455,10 @@
 
                     // Common fields appear for link/popup_window/popups, but not strictly required
                     setDisplay('.common-field', !(isPopupImage || isPopupVideo));
-                    setDisplay('.link-field', isInternal || isExternal || isPopupWindow);
+                    setDisplay('.link-field', isExternal || isPopupWindow);
                     setDisplay('.internal-field', isInternal);
                     setDisplay('.popup-window-field', isPopupWindow);
-                    setDisplay('.thumb-field', isInternal || isExternal || isPopupWindow);
+                    setDisplay('.thumb-field', isPopupWindow);
                     setDisplay('.popup-image-field', isPopupImage);
                     setDisplay('.popup-video-field', isPopupVideo);
                 }
@@ -582,9 +543,10 @@
                     setStatus('');
                 }
 
-                async function deleteSelected() {
+                async function deleteCanvasObject(targetObject = null) {
                     if (!canvas) return;
-                    const obj = canvas.getActiveObject();
+
+                    const obj = targetObject || canvas.getActiveObject();
                     if (!obj) return;
 
                     const hotspotId = obj.__hotspotData?.id || hotspotIdEl.value;
@@ -618,9 +580,48 @@
                     updateCurrentMedia();
                     clearFileInputs();
                     setFormMode(false);
+                    hotspotModal?.hide();
                     setStatus('Deleted.', 'success');
                     await loadHotspots();
                     await renderThumbnailPreview();
+                }
+
+                function renderDeleteControl(ctx, left, top) {
+                    ctx.save();
+                    ctx.translate(left, top);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(-4, -4);
+                    ctx.lineTo(4, 4);
+                    ctx.moveTo(4, -4);
+                    ctx.lineTo(-4, 4);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                function registerDeleteControl() {
+                    if (!window.fabric || fabric.Object.prototype.controls.deleteControl) {
+                        return;
+                    }
+
+                    fabric.Object.prototype.controls.deleteControl = new fabric.Control({
+                        x: 0.5,
+                        y: -0.5,
+                        offsetY: -16,
+                        offsetX: 16,
+                        cursorStyle: 'pointer',
+                        mouseUpHandler: function(eventData, transform) {
+                            deleteCanvasObject(transform.target);
+                            return true;
+                        },
+                        render: renderDeleteControl,
+                        cornerSize: 24
+                    });
                 }
 
                 function normalizeBbox(rect) {
@@ -799,9 +800,51 @@
                     return pageSelect?.value;
                 }
 
+                function currentPageIndex() {
+                    return pageSelect ? pageSelect.selectedIndex : -1;
+                }
+
                 function currentPageNumber() {
                     const opt = pageSelect?.selectedOptions?.[0];
                     return opt ? parseInt(opt.getAttribute('data-page-number') || '1', 10) : 1;
+                }
+
+                function updatePageNavigation() {
+                    if (!pageSelect || !pageNavTitle || !pageNavMeta) {
+                        return;
+                    }
+
+                    const index = currentPageIndex();
+                    const total = pageSelect.options.length;
+                    const option = index >= 0 ? pageSelect.options[index] : null;
+                    const pageNumber = option ? option.getAttribute('data-page-number') || String(index + 1) : '0';
+
+                    pageNavTitle.textContent = option ? option.textContent.trim() : 'No pages available';
+                    pageNavMeta.textContent = `Page ${pageNumber} of ${total}`;
+
+                    if (pagePrevButton) {
+                        pagePrevButton.disabled = index <= 0;
+                    }
+
+                    if (pageNextButton) {
+                        pageNextButton.disabled = index < 0 || index >= total - 1;
+                    }
+                }
+
+                function changePageBy(offset) {
+                    if (!pageSelect) {
+                        return;
+                    }
+
+                    const nextIndex = currentPageIndex() + offset;
+                    if (nextIndex < 0 || nextIndex >= pageSelect.options.length) {
+                        return;
+                    }
+
+                    pageSelect.selectedIndex = nextIndex;
+                    pageSelect.dispatchEvent(new Event('change', {
+                        bubbles: true
+                    }));
                 }
 
                 function pageImageUrl(pageId) {
@@ -842,6 +885,7 @@
                     updateCurrentMedia(h);
                     setActiveHotspotListItem(h.id);
                     setFormMode(true);
+                    openHotspotModal('edit');
                 }
 
                 function getScaledHotspotData(hotspot) {
@@ -886,6 +930,10 @@
                     });
                     canvas.requestRenderAll();
                     setStatus('');
+
+                    if (!hotspot) {
+                        openHotspotModal('create');
+                    }
                 }
 
                 async function renderHotspotsOnCanvas(hotspots, selectedHotspotId = null) {
@@ -946,7 +994,8 @@
                     hotspotList.innerHTML = '';
                     for (const h of data) {
                         const item = document.createElement('a');
-                        item.className = 'list-group-item list-group-item-action';
+                        item.className =
+                            'list-group-item list-group-item-action border border-dashed border-gray-300 rounded-3 mb-3';
                         item.dataset.hotspotId = String(h.id);
                         item.textContent = (h.title ? h.title + ' — ' : '') + h.action_type;
                         item.addEventListener('click', () => {
@@ -1028,8 +1077,9 @@
                     // Create hotspot overlays
                     for (const h of hotspots) {
                         const div = document.createElement('div');
-                        div.className = 'thumbnail-hotspot';
-                        if (h.is_active) div.classList.add('active');
+                        div.className = 'position-absolute border border-2 pe-none bg-opacity-25';
+                        div.classList.add(h.is_active ? 'border-success' : 'border-primary');
+                        div.classList.add(h.is_active ? 'bg-success' : 'bg-primary');
 
                         // Position using percentage values (x, y, w, h are normalized 0-1)
                         div.style.left = (h.x * 100) + '%';
@@ -1157,6 +1207,8 @@
                     const el = document.getElementById('slicerCanvas');
                     if (!el) return;
 
+                    registerDeleteControl();
+
                     canvas = new fabric.Canvas('slicerCanvas', {
                         selection: true,
                         preserveObjectStacking: true
@@ -1253,6 +1305,7 @@
                             setCurrentObject(rect, 'rectangle', {
                                 hotspotId: ''
                             });
+                            openHotspotModal('create');
                             rect = null;
                         }
                     });
@@ -1279,6 +1332,7 @@
                         setCurrentObject(poly, 'polygon', {
                             hotspotId: ''
                         });
+                        openHotspotModal('create');
                     });
 
                     // Capture free-draw path
@@ -1301,6 +1355,7 @@
                         updateCurrentMedia();
                         clearFileInputs();
                         setStatus('');
+                        openHotspotModal('create');
                     });
 
                     canvas.on('object:modified', function(event) {
@@ -1339,8 +1394,10 @@
 
                 async function onPageChanged() {
                     if (!canvas) return;
+                    hotspotModal?.hide();
                     hotspotIdEl.value = '';
                     setStatus('');
+                    updatePageNavigation();
                     await loadBackgroundForPage();
                     await loadHotspots();
                     await renderThumbnailPreview();
@@ -1405,10 +1462,18 @@
                         clearHotspotId: true
                     });
                 });
-                document.getElementById('btnDeleteSelected')?.addEventListener('click', deleteSelected);
+                document.getElementById('btnDeleteSelected')?.addEventListener('click', () => {
+                    deleteCanvasObject();
+                });
                 document.getElementById('btnNew')?.addEventListener('click', resetFormForNew);
+                openHotspotModalButton?.addEventListener('click', () => {
+                    resetFormForNew();
+                    openHotspotModal('create');
+                });
                 document.getElementById('btnInitPages')?.addEventListener('click', initPagesClientSide);
                 document.getElementById('btnRefreshPreview')?.addEventListener('click', renderThumbnailPreview);
+                pagePrevButton?.addEventListener('click', () => changePageBy(-1));
+                pageNextButton?.addEventListener('click', () => changePageBy(1));
 
                 formEl?.addEventListener('submit', function(e) {
                     e.preventDefault();
@@ -1422,8 +1487,11 @@
                     setTool('rectangle');
                     setFormMode(false);
                     updateCurrentMedia();
+                    updatePageNavigation();
                     onPageChanged();
                     pageSelect.addEventListener('change', onPageChanged);
+                } else {
+                    updatePageNavigation();
                 }
             })();
         </script>

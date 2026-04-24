@@ -82,5 +82,9 @@ class CatalogPdfOwnershipTest extends TestCase
         $this->actingAs($otherCustomer)
             ->get(route('catalog.pdfs.flip-physics.edit', $pdf))
             ->assertForbidden();
+
+        $this->actingAs($otherCustomer)
+            ->get(route('catalog.pdfs.share-preview.edit', $pdf))
+            ->assertForbidden();
     }
 }

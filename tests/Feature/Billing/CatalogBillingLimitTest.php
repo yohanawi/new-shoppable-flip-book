@@ -25,7 +25,6 @@ class CatalogBillingLimitTest extends TestCase
         $user = User::factory()->create([
             'role' => 'customer',
         ]);
-        $user->assignRole('customer');
 
         CatalogPdf::query()->create([
             'user_id' => $user->id,

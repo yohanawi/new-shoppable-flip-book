@@ -16,6 +16,7 @@ class NotificationPagesTest extends TestCase
     {
         $this->seed(ProjectPermissionsSeeder::class);
 
+        /** @var User $user */
         $user = User::factory()->create(['role' => 'customer']);
         $user->assignRole('customer');
         $user->notify(new AdminCustomNotification('Account update', 'Your notification inbox is active.'));
@@ -37,13 +38,38 @@ class NotificationPagesTest extends TestCase
         ]);
     }
 
+    public function test_customer_can_fetch_the_notification_feed_as_json(): void
+    {
+        $this->seed(ProjectPermissionsSeeder::class);
+
+        /** @var User $user */
+        $user = User::factory()->create(['role' => 'customer']);
+        $user->assignRole('customer');
+        $user->notify(new AdminCustomNotification('Realtime inbox', 'Feed payload should be returned as JSON.'));
+
+        $response = $this->actingAs($user)
+            ->getJson(route('notifications.feed'));
+
+        $response->assertOk();
+        $response->assertJsonPath('unread_count', 1);
+        $response->assertJsonPath('notifications.0.title', 'Realtime inbox');
+        $response->assertJsonPath('notifications.0.message', 'Feed payload should be returned as JSON.');
+    }
+
     public function test_admin_can_send_custom_notifications_and_view_the_audit_page(): void
     {
         $this->seed(ProjectPermissionsSeeder::class);
 
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.host' => null,
+        ]);
+
+        /** @var User $admin */
         $admin = User::factory()->create(['role' => 'admin']);
         $admin->assignRole('admin');
 
+        /** @var User $recipient */
         $recipient = User::factory()->create(['role' => 'customer']);
         $recipient->assignRole('customer');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Apps;
 use App\Http\Controllers\Controller;
 use App\Models\CatalogPdf;
 use App\Models\CatalogPdfFlipPhysicsSetting;
+use App\Models\CatalogPdfSharePreviewSetting;
 use App\Models\CatalogPdfHotspot;
 use App\Services\BillingManager;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CatalogPdfController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, BillingManager $billingManager)
     {
         $filters = [
             'search' => trim((string) $request->query('search', '')),
@@ -86,12 +87,15 @@ class CatalogPdfController extends Controller
             ->paginate(12)
             ->withQueryString();
 
+        $uploadAvailability = $this->uploadAvailability($request, $billingManager);
+
         return view('pages.apps.catalog.index', [
             'pdfs' => $pdfs,
             'filters' => $filters,
             'visibilityOptions' => $visibilityOptions,
             'templateTypeOptions' => $templateTypeOptions,
             'sortOptions' => $sortOptions,
+            'uploadAvailability' => $uploadAvailability,
             'stats' => [
                 'total' => (int) ($stats->total ?? 0),
                 'public' => (int) ($stats->public_count ?? 0),
@@ -101,8 +105,16 @@ class CatalogPdfController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request, BillingManager $billingManager)
     {
+        $uploadAvailability = $this->uploadAvailability($request, $billingManager);
+
+        if (!$uploadAvailability['allowed']) {
+            return redirect()
+                ->route('catalog.pdfs.index')
+                ->withErrors(['billing' => $uploadAvailability['message']]);
+        }
+
         $visibilityOptions = CatalogPdf::visibilityOptions();
 
         return view('pages.apps.catalog.create', compact('visibilityOptions'));
@@ -210,11 +222,20 @@ class CatalogPdfController extends Controller
             $setting->applyPreset(CatalogPdfFlipPhysicsSetting::defaultPreset());
         }
 
+        $sharePreviewSetting = $catalogPdf->sharePreviewSetting()->first();
+        if (!$sharePreviewSetting) {
+            $sharePreviewSetting = new CatalogPdfSharePreviewSetting([
+                'catalog_pdf_id' => $catalogPdf->id,
+            ]);
+            $sharePreviewSetting->applyDefaults();
+        }
+
         return view('pages.apps.catalog.share', [
             'pdf' => $catalogPdf,
             'pages' => $pages,
             'hotspots' => $hotspots,
             'viewerSettings' => $setting->viewerSettings(),
+            'shareAppearance' => $this->shareAppearancePayload($catalogPdf, $sharePreviewSetting),
             'pdfUrl' => route('catalog.pdfs.file', $catalogPdf),
         ]);
     }
@@ -235,6 +256,9 @@ class CatalogPdfController extends Controller
             [
                 'Content-Type' => $catalogPdf->mime_type ?: 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . ($catalogPdf->original_filename ?: 'document.pdf') . '"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
             ]
         );
     }
@@ -430,5 +454,37 @@ class CatalogPdfController extends Controller
                 : null,
             'popup_video_url' => $hotspot->popup_video_url,
         ];
+    }
+
+    private function shareAppearancePayload(CatalogPdf $catalogPdf, CatalogPdfSharePreviewSetting $setting): array
+    {
+        $appearance = $setting->appearanceSettings();
+
+        $appearance['backgroundImageUrl'] = $setting->hasBackgroundImage()
+            ? route('catalog.pdfs.share-preview.asset', [$catalogPdf, 'background-image'])
+            : null;
+        $appearance['backgroundVideoUrl'] = $setting->hasBackgroundVideo()
+            ? route('catalog.pdfs.share-preview.asset', [$catalogPdf, 'background-video'])
+            : null;
+        $appearance['logoUrl'] = $setting->hasLogo()
+            ? route('catalog.pdfs.share-preview.asset', [$catalogPdf, 'logo'])
+            : null;
+        $appearance['hasBranding'] = filled($appearance['logoTitle']) || filled($appearance['logoUrl']);
+
+        return $appearance;
+    }
+
+    private function uploadAvailability(Request $request, BillingManager $billingManager): array
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return [
+                'allowed' => false,
+                'message' => 'Sign in to upload a PDF.',
+            ];
+        }
+
+        return $billingManager->canCreateFlipbook($user);
     }
 }

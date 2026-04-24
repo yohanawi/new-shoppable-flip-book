@@ -157,6 +157,59 @@ class CatalogPdfSlicerHotspotManagementTest extends TestCase
         $this->assertFalse(Storage::disk('local')->exists($storedPath));
     }
 
+    public function test_switching_hotspot_action_from_popup_window_clears_stale_thumbnail_media(): void
+    {
+        Storage::fake('local');
+
+        /** @var User $user */
+        $user = User::factory()->create();
+        [$pdf, $page] = $this->createSlicerPdfForUser($user);
+
+        $storedPath = 'catalog-slicer/' . $pdf->id . '/hotspots/existing-thumb.png';
+        Storage::disk('local')->put($storedPath, 'thumb-bytes');
+
+        $hotspot = CatalogPdfHotspot::create([
+            'catalog_pdf_id' => $pdf->id,
+            'catalog_pdf_page_id' => $page->id,
+            'display_order' => 1,
+            'shape_type' => CatalogPdfHotspot::SHAPE_RECTANGLE,
+            'shape_data' => $this->shapeData(),
+            'x' => 0.20,
+            'y' => 0.25,
+            'w' => 0.18,
+            'h' => 0.12,
+            'action_type' => CatalogPdfHotspot::ACTION_POPUP_WINDOW,
+            'is_active' => true,
+            'title' => 'Product Hotspot',
+            'thumbnail_disk' => 'local',
+            'thumbnail_path' => $storedPath,
+            'description' => 'Current popup window',
+            'price' => 20,
+        ]);
+
+        $response = $this->actingAs($user)->post(
+            route('catalog.pdfs.slicer.hotspots.update', [$pdf, $hotspot]),
+            array_merge($this->baseShapePayload(), [
+                '_method' => 'PATCH',
+                'action_type' => CatalogPdfHotspot::ACTION_EXTERNAL_LINK,
+                'title' => 'External Hotspot',
+                'link' => 'https://example.com/updated',
+            ]),
+            ['Accept' => 'application/json']
+        );
+
+        $response->assertOk();
+        $response->assertJsonPath('data.action_type', CatalogPdfHotspot::ACTION_EXTERNAL_LINK);
+        $response->assertJsonPath('data.thumbnail_path', null);
+
+        $hotspot->refresh();
+
+        $this->assertSame(CatalogPdfHotspot::ACTION_EXTERNAL_LINK, $hotspot->action_type);
+        $this->assertNull($hotspot->thumbnail_disk);
+        $this->assertNull($hotspot->thumbnail_path);
+        $this->assertFalse(Storage::disk('local')->exists($storedPath));
+    }
+
     private function createSlicerPdfForUser(User $user): array
     {
         $pdf = CatalogPdf::create([

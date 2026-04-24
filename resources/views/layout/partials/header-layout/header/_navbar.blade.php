@@ -20,10 +20,9 @@
         <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-30px h-30px w-md-40px h-md-40px position-relative"
             data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-attach="parent"
             data-kt-menu-placement="bottom-end" id="kt_menu_item_notifications">{!! getIcon('notification-bing', 'fs-2 fs-md-1') !!}
-            @if ($headerUnreadCount > 0)
-                <span
-                    class="position-absolute top-0 start-100 translate-middle badge badge-circle badge-danger fs-8">{{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}</span>
-            @endif
+            <span
+                class="position-absolute top-0 start-100 translate-middle badge badge-circle badge-danger fs-8 {{ $headerUnreadCount > 0 ? '' : 'd-none' }}"
+                data-notification-badge>{{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}</span>
         </div>
         @include('partials/menus/_notifications-menu')
         <!--end::Menu wrapper-->

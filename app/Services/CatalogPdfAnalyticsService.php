@@ -5,13 +5,19 @@ namespace App\Services;
 use App\Models\CatalogPdf;
 use App\Models\CatalogPdfEvent;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class CatalogPdfAnalyticsService
 {
-    public function forOwner(User $user): array
+    public function forViewer(User $viewer, ?User $owner = null): array
     {
-        $pdfs = $user->catalogPdfs()
+        $pdfs = CatalogPdf::query()
+            ->with('user')
+            ->when(
+                !$viewer->isAdmin() || $owner !== null,
+                fn(Builder $query) => $query->where('user_id', ($owner ?: $viewer)->id)
+            )
             ->latest()
             ->get();
 
@@ -31,6 +37,7 @@ class CatalogPdfAnalyticsService
 
             return [
                 'pdf' => $pdf,
+                'owner' => $pdf->user,
                 'views_count' => $pdfEvents->where('event_type', CatalogPdfEvent::EVENT_BOOK_OPEN)->count(),
                 'readers_count' => $readerKeys->count(),
                 'reader_keys' => $readerKeys,
@@ -51,6 +58,7 @@ class CatalogPdfAnalyticsService
         return [
             'summary' => [
                 'books_count' => $books->count(),
+                'owners_count' => $books->pluck('owner.id')->filter()->unique()->count(),
                 'views_count' => $books->sum('views_count'),
                 'readers_count' => $allReaderKeys->filter()->unique()->count(),
                 'time_spent_ms' => $books->sum('time_spent_ms'),

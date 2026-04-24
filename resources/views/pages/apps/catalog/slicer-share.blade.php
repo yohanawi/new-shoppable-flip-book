@@ -430,6 +430,8 @@
                 const turnPage = $flipbook.turn('page');
                 return Number(pages[turnPage - 1]?.page_number || pages[0]?.page_number || 1);
             });
+            const modalVideoEl = document.getElementById('modalVideo');
+            const modalVideoWrapEl = document.getElementById('modalVideoWrap');
 
             const hotspotByPageId = {};
             for (const h of hotspots) {
@@ -540,6 +542,24 @@
                 modal.show();
             }
 
+            function stopModalVideoPlayback() {
+                if (!modalVideoWrapEl) return;
+
+                modalVideoWrapEl.querySelectorAll('video').forEach((video) => {
+                    video.pause();
+                    video.removeAttribute('src');
+                    video.load();
+                });
+
+                modalVideoWrapEl.querySelectorAll('iframe').forEach((iframe) => {
+                    iframe.setAttribute('src', 'about:blank');
+                });
+
+                modalVideoWrapEl.innerHTML = '';
+            }
+
+            modalVideoEl?.addEventListener('hide.bs.modal', stopModalVideoPlayback);
+
             function handleAction(h) {
                 if (h.action_type === 'internal_page') {
                     const targetIdx = pageIndexForPageNumber(h.internal_page_number);
@@ -578,7 +598,8 @@
 
                 if (h.action_type === 'popup_video') {
                     document.getElementById('modalVideoTitle').textContent = 'Video Player';
-                    const wrap = document.getElementById('modalVideoWrap');
+                    const wrap = modalVideoWrapEl;
+                    stopModalVideoPlayback();
 
                     if (h.popup_video_url) {
                         wrap.innerHTML =

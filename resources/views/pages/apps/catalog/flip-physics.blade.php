@@ -4,64 +4,19 @@
         Flip Physics
     @endsection
 
-    <style>
-        .flipbook-stage {
-            min-height: clamp(420px, 72vh, 920px);
-            padding: 16px;
-            border-radius: 24px;
-            background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
-            overflow: auto;
-        }
-
-        #flipbook {
-            margin: 0 auto;
-            max-width: 100%;
-        }
-
-        #flipbook .page {
-            background: #fff;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            box-sizing: border-box;
-        }
-
-        #flipbook canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .flipbook-status {
-            color: #7e8299;
-        }
-    </style>
-
-    <div class="card border-0 shadow-sm overflow-hidden mb-8">
-        <div class="card-body p-0">
-            <div class="p-10 p-lg-15" style="background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);">
-                <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center">
-                    <div class="mw-500px">
-                        <span class="badge badge-light-primary mb-4">Flip Physics</span>
-                        <h1 class="text-white fw-bold mb-4">Tune the page flip viewer for {{ $pdf->title }}</h1>
-                        <div class="text-white opacity-75 fs-5">
-                            Adjust the motion, display mode, and render quality here. This page controls the Flip
-                            Physics viewer for the same PDF that can also use Page Management and Slicer.
-                        </div>
-                    </div>
-                    <div class="d-flex flex-wrap gap-3">
-                        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light">
-                            Back
-                        </a>
-                        <a href="{{ route('catalog.pdfs.flip-physics.preview', $pdf) }}" class="btn btn-light-primary"
-                            target="_blank">Preview</a>
-                        <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-success">
-                            Download PDF
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center mb-5">
+        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light border">
+            <i class="ki-outline ki-arrow-left fs-2"></i> Back
+        </a>
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{{ route('catalog.pdfs.flip-physics.preview', $pdf) }}" class="btn btn-light-primary"
+                target="_blank">Preview</a>
+            <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-success">
+                Download PDF
+            </a>
         </div>
     </div>
+
 
     @if (session('success'))
         <div class="alert alert-success d-flex align-items-start gap-3 mb-8">
@@ -81,43 +36,43 @@
         </div>
     @endif
 
-    <div class="row g-6 g-xl-8 mb-8">
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Current function</div>
-                    <div class="fw-bold text-gray-900 fs-3">Flip Physics</div>
+    <div class="row g-7">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header border-0 pt-7">
+                    <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label fw-bold text-gray-900">Live Preview</span>
+                        <span class="text-muted mt-1 fw-semibold fs-7">Preview the current flip settings before
+                            saving
+                            them.</span>
+                    </h3>
                 </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
+
                 <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Preset</div>
-                    <div class="fw-bold text-gray-900 fs-3">{{ $presetOptions[$setting->preset] ?? $setting->preset }}
+                    <div
+                        class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-4 mb-5">
+                        <div class="text-muted fs-7 fw-semibold" id="status">Rendering pages…</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-light-info btn-sm" id="btnFullscreen"
+                                title="Open in new tab">
+                                <i class="bi bi-fullscreen"></i> Fullscreen
+                            </button>
+                            <button type="button" class="btn btn-light-success btn-sm" id="btnShare" title="Share">
+                                <i class="bi bi-share"></i> Share
+                            </button>
+                            <button type="button" class="btn btn-light" id="btnPrev">Previous</button>
+                            <button type="button" class="btn btn-light" id="btnNext">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center align-items-center bg-light-primary rounded-4 border border-dashed border-primary p-4 p-xl-6 overflow-auto mh-750px"
+                        id="flipbookStage">
+                        <div id="flipbook"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Display mode</div>
-                    <div class="fw-bold text-gray-900 fs-3 text-capitalize">{{ $setting->display_mode }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted fs-7 fw-semibold mb-2">Duration</div>
-                    <div class="fw-bold text-gray-900 fs-3">{{ $setting->duration_ms }}ms</div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row g-7">
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-header border-0 pt-7">
@@ -176,7 +131,8 @@
                             <select class="form-select form-select-solid" name="display_mode" id="display_mode"
                                 data-control="select2" data-hide-search="true">
                                 <option value="auto"
-                                    {{ old('display_mode', $setting->display_mode) === 'auto' ? 'selected' : '' }}>Auto
+                                    {{ old('display_mode', $setting->display_mode) === 'auto' ? 'selected' : '' }}>
+                                    Auto
                                 </option>
                                 <option value="single"
                                     {{ old('display_mode', $setting->display_mode) === 'single' ? 'selected' : '' }}>
@@ -244,41 +200,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header border-0 pt-7">
-                    <h3 class="card-title align-items-start flex-column">
-                        <span class="card-label fw-bold text-gray-900">Live Preview</span>
-                        <span class="text-muted mt-1 fw-semibold fs-7">Preview the current flip settings before saving
-                            them.</span>
-                    </h3>
-                </div>
-
-                <div class="card-body">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5">
-                        <div class="flipbook-status" id="status">Rendering pages…</div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-light-info btn-sm" id="btnFullscreen"
-                                title="Open in new tab">
-                                <i class="bi bi-fullscreen"></i> Fullscreen
-                            </button>
-                            <button type="button" class="btn btn-light-success btn-sm" id="btnShare"
-                                title="Share">
-                                <i class="bi bi-share"></i> Share
-                            </button>
-                            <button type="button" class="btn btn-light" id="btnPrev">Previous</button>
-                            <button type="button" class="btn btn-light" id="btnNext">Next</button>
-                        </div>
-                    </div>
-
-                    <div class="flipbook-stage d-flex justify-content-center align-items-center" id="flipbookStage">
-                        <div id="flipbook"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- Share Modal -->
@@ -290,34 +211,23 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted">Share this link to allow others to view the flipbook with current settings:
+                    <p class="text-muted">Share this link to allow others to view the flipbook with current
+                        settings:
                     </p>
-                    <div class="share-link-container">
+                    <div class="input-group mt-4">
                         <input type="text" class="form-control" id="shareLink" readonly
                             value="{{ route('catalog.pdfs.flip-physics.share', $pdf) }}">
                         <button type="button" class="btn btn-primary" id="btnCopyLink">
                             <i class="bi bi-clipboard"></i> Copy
                         </button>
                     </div>
-                    <div class="mt-3" id="copySuccess" style="display:none;">
+                    <div class="mt-3 d-none" id="copySuccess">
                         <div class="alert alert-success">Link copied to clipboard!</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <style>
-        .share-link-container {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .share-link-container input {
-            flex: 1;
-        }
-    </style>
 
     @push('scripts')
         <script src="{{ asset('assets/plugins/custom/turnjs/turn.min.js') }}"></script>
@@ -443,10 +353,11 @@
                     flipbookEl.innerHTML = '';
                     for (let i = 1; i <= pageCount; i++) {
                         const pageDiv = document.createElement('div');
-                        pageDiv.className = 'page';
+                        pageDiv.className = 'page bg-white overflow-hidden shadow rounded-3';
                         pageDiv.dataset.pageNumber = String(i);
 
                         const canvas = document.createElement('canvas');
+                        canvas.className = 'w-100 h-100 d-block';
                         canvas.width = 10;
                         canvas.height = 10;
                         pageDiv.appendChild(canvas);
@@ -628,9 +539,9 @@
                     linkInput.setSelectionRange(0, 99999); // For mobile
 
                     const showCopySuccess = () => {
-                        document.getElementById('copySuccess').style.display = 'block';
+                        document.getElementById('copySuccess').classList.remove('d-none');
                         setTimeout(function() {
-                            document.getElementById('copySuccess').style.display = 'none';
+                            document.getElementById('copySuccess').classList.add('d-none');
                         }, 3000);
                     };
 

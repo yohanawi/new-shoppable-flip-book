@@ -5,10 +5,9 @@
         <div class="btn btn-icon btn-custom btn-icon-muted btn-active-light btn-active-color-primary w-30px h-30px w-md-35px h-md-35px position-relative"
             data-kt-menu-trigger="click" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
             {!! getIcon('notification-bing', 'fs-2') !!}
-            @if ($sidebarUnreadCount > 0)
-                <span
-                    class="position-absolute top-0 start-100 translate-middle badge badge-circle badge-danger fs-8">{{ $sidebarUnreadCount > 99 ? '99+' : $sidebarUnreadCount }}</span>
-            @endif
+            <span
+                class="position-absolute top-0 start-100 translate-middle badge badge-circle badge-danger fs-8 {{ $sidebarUnreadCount > 0 ? '' : 'd-none' }}"
+                data-notification-badge>{{ $sidebarUnreadCount > 99 ? '99+' : $sidebarUnreadCount }}</span>
         </div>
         @include('partials/menus/_notifications-menu')
     </div>

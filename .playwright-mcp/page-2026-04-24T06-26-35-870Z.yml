@@ -1,0 +1,507 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - text:  
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - generic [ref=e10] [cursor=pointer]:
+            - generic [ref=e11]: 
+            - generic: 
+            - generic: 
+          - text:   
+        - generic [ref=e12]:
+          - generic [ref=e14] [cursor=pointer]: "Y"
+          - text:                            
+        - text:  
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - link "Logo" [ref=e18] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - img "Logo" [ref=e19]
+          - generic [ref=e21] [cursor=pointer]:
+            - generic [ref=e22]: 
+            - generic: 
+        - generic [ref=e25]:
+          - link "    Dashboard" [ref=e27] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=e30]:
+              - generic [ref=e31]: 
+              - generic: 
+              - generic: 
+              - generic: 
+            - generic [ref=e32]: Dashboard
+          - generic [ref=e34]: Apps
+          - generic [ref=e35]:
+            - generic [ref=e36] [cursor=pointer]:
+              - generic [ref=e38]:
+                - generic [ref=e39]: 
+                - generic: 
+              - generic [ref=e40]: Catalog
+            - link "Upload Catalog" [ref=e44] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/catalog/pdfs/create
+              - generic [ref=e47]: Upload Catalog
+            - link "Catalogs" [ref=e50] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/catalog/pdfs
+              - generic [ref=e53]: Catalogs
+          - generic [ref=e55]: Billing
+          - link "    Billing" [ref=e57] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/billing
+            - generic [ref=e59]:
+              - generic [ref=e60]: 
+              - generic: 
+              - generic: 
+              - generic: 
+            - generic [ref=e61]: Billing
+          - generic [ref=e63]: Analytics
+          - generic [ref=e65]: Support
+          - link "   Support Tickets" [ref=e67] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/tickets
+            - generic [ref=e69]:
+              - generic [ref=e70]: 
+              - generic: 
+              - generic: 
+            - generic [ref=e71]: Support Tickets
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - generic [ref=e76]:
+            - heading "Page Management - cxxcx" [level=1] [ref=e77]
+            - list [ref=e78]:
+              - listitem [ref=e79]:
+                - link "Home" [ref=e80] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/dashboard
+              - listitem [ref=e81]
+              - listitem [ref=e83]:
+                - link "Dashboard" [ref=e84] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/dashboard
+              - listitem [ref=e85]
+              - listitem [ref=e87]:
+                - link "Catalog PDFs" [ref=e88] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/catalog/pdfs
+              - listitem [ref=e89]
+              - listitem [ref=e91]:
+                - link "cxxcx" [ref=e92] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/catalog/pdfs/9
+              - listitem [ref=e93]
+              - listitem [ref=e95]: Page Management
+          - generic [ref=e97]:
+            - link " Back to Page Management" [ref=e100] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/catalog/pdfs/9/manage
+              - generic [ref=e101]: 
+              - text: Back to Page Management
+            - generic [ref=e104]:
+              - generic [ref=e105]:
+                - button "Previous" [ref=e106] [cursor=pointer]
+                - button "Next" [ref=e107] [cursor=pointer]
+              - generic [ref=e108]: Loading PDF…
+              - generic [ref=e109]:
+                - button " Fullscreen" [ref=e110] [cursor=pointer]:
+                  - generic [ref=e111]: 
+                  - text: Fullscreen
+                - button " Share" [ref=e112] [cursor=pointer]:
+                  - generic [ref=e113]: 
+                  - text: Share
+                - link " Download" [ref=e114] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/catalog/pdfs/9/download
+                  - generic [ref=e115]: 
+                  - text: Download
+            - text: 
+        - generic [ref=e119]:
+          - text: 2026©
+          - link "XESS Global" [ref=e120] [cursor=pointer]:
+            - /url: "#"
+  - generic [ref=e122]:
+    - generic [ref=e123]:
+      - heading "Activity Logs" [level=3] [ref=e124]
+      - button " " [ref=e126] [cursor=pointer]:
+        - generic [ref=e127]:
+          - generic [ref=e128]: 
+          - generic: 
+    - generic [ref=e131]:
+      - generic [ref=e132]:
+        - generic [ref=e136]:
+          - generic [ref=e137]: 
+          - generic: 
+          - generic: 
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - generic [ref=e140]: "There are 2 new tasks for you in “AirPlus Mobile App” project:"
+            - generic [ref=e141]:
+              - generic [ref=e142]: Added at 4:23 PM by
+              - generic "Nina Nilson" [ref=e143]:
+                - img "img" [ref=e144]
+          - generic [ref=e145]:
+            - generic [ref=e146]:
+              - link "Meeting with customer" [ref=e147] [cursor=pointer]:
+                - /url: "#"
+              - generic [ref=e149]: Application Design
+              - generic [ref=e150]:
+                - img "img" [ref=e152] [cursor=pointer]
+                - img "img" [ref=e154] [cursor=pointer]
+                - generic [ref=e156] [cursor=pointer]: A
+              - generic [ref=e158]: In Progress
+              - link "View" [ref=e159] [cursor=pointer]:
+                - /url: "#"
+            - generic [ref=e160]:
+              - link "Project Delivery Preparation" [ref=e161] [cursor=pointer]:
+                - /url: "#"
+              - generic [ref=e163]: CRM System Development
+              - generic [ref=e164]:
+                - img "img" [ref=e166] [cursor=pointer]
+                - generic [ref=e168] [cursor=pointer]: B
+              - generic [ref=e170]: Completed
+              - link "View" [ref=e171] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e172]:
+        - generic [ref=e176]:
+          - generic [ref=e177]: 
+          - generic: 
+        - generic [ref=e179]:
+          - generic [ref=e180]: Invitation for crafting engaging designs that speak human workshop
+          - generic [ref=e181]:
+            - generic [ref=e182]: Sent at 4:23 PM by
+            - generic "Alan Nilson" [ref=e183]:
+              - img "img" [ref=e184]
+      - generic [ref=e185]:
+        - generic [ref=e189]:
+          - generic [ref=e190]: 
+          - generic: 
+          - generic: 
+          - generic: 
+          - generic: 
+        - generic [ref=e191]:
+          - generic [ref=e192]:
+            - link "3 New Incoming Project Files:" [ref=e193] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=e194]:
+              - generic [ref=e195]: Sent at 10:30 PM by
+              - generic "Jan Hummer" [ref=e196]:
+                - img "img" [ref=e197]
+          - generic [ref=e199]:
+            - generic [ref=e201]:
+              - link "Finance KPI App Guidelines" [ref=e202] [cursor=pointer]:
+                - /url: "#"
+              - generic [ref=e203]: 1.9mb
+            - generic [ref=e204]:
+              - img "?page=apps/projects/project" [ref=e205]
+              - generic [ref=e206]:
+                - link "Client UAT Testing Results" [ref=e207] [cursor=pointer]:
+                  - /url: "#"
+                - generic [ref=e208]: 18kb
+            - generic [ref=e209]:
+              - img "?page=apps/projects/project" [ref=e210]
+              - generic [ref=e211]:
+                - link "Finance Reports" [ref=e212] [cursor=pointer]:
+                  - /url: "#"
+                - generic [ref=e213]: 20mb
+      - generic [ref=e214]:
+        - generic [ref=e218]:
+          - generic [ref=e219]: 
+          - generic: 
+        - generic [ref=e221]:
+          - generic [ref=e222]:
+            - text: Task
+            - link "#45890" [ref=e223] [cursor=pointer]:
+              - /url: "#"
+            - text: merged with
+            - link "#45890" [ref=e224] [cursor=pointer]:
+              - /url: "#"
+            - text: "in “Ads Pro Admin Dashboard project:"
+          - generic [ref=e225]:
+            - generic [ref=e226]: Initiated at 4:23 PM by
+            - generic "Nina Nilson" [ref=e227]:
+              - img "img" [ref=e228]
+      - generic [ref=e229]:
+        - generic [ref=e233]:
+          - generic [ref=e234]: 
+          - generic: 
+        - generic [ref=e235]:
+          - generic [ref=e236]:
+            - generic [ref=e237]: "3 new application design concepts added:"
+            - generic [ref=e238]:
+              - generic [ref=e239]: Created at 4:23 PM by
+              - generic "Marcus Dotson" [ref=e240]:
+                - img "img" [ref=e241]
+          - generic [ref=e243]:
+            - generic [ref=e244]:
+              - img "img" [ref=e246]
+              - link "Explore" [ref=e248] [cursor=pointer]:
+                - /url: "#"
+            - generic [ref=e249]:
+              - img "img" [ref=e251]
+              - link "Explore" [ref=e253] [cursor=pointer]:
+                - /url: "#"
+            - generic [ref=e254]:
+              - img "img" [ref=e256]
+              - link "Explore" [ref=e258] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e259]:
+        - generic [ref=e263]:
+          - generic [ref=e264]: 
+          - generic: 
+        - generic [ref=e266]:
+          - generic [ref=e267]:
+            - text: New case
+            - link "#67890" [ref=e268] [cursor=pointer]:
+              - /url: "#"
+            - text: is assigned to you in Multi-platform Database Design project
+          - generic [ref=e270]:
+            - generic [ref=e271]: Added at 4:23 PM by
+            - link "Alice Tan" [ref=e272] [cursor=pointer]:
+              - /url: "#"
+      - generic [ref=e273]:
+        - generic [ref=e277]:
+          - generic [ref=e278]: 
+          - generic: 
+        - generic [ref=e279]:
+          - generic [ref=e280]:
+            - generic [ref=e281]: "You have received a new order:"
+            - generic [ref=e282]:
+              - generic [ref=e283]: Placed at 5:05 AM by
+              - generic "Robert Rich" [ref=e284]:
+                - img "img" [ref=e285]
+          - generic [ref=e287]:
+            - generic [ref=e288]:
+              - generic [ref=e289]: 
+              - generic: 
+              - generic: 
+            - generic [ref=e290]:
+              - generic [ref=e291]:
+                - heading "Database Backup Process Completed!" [level=4] [ref=e292]
+                - generic [ref=e293]: Login into Admin Dashboard to make sure the data integrity is OK
+              - link "Proceed" [ref=e294] [cursor=pointer]:
+                - /url: "#"
+      - generic [ref=e295]:
+        - generic [ref=e298]:
+          - generic [ref=e299]: 
+          - generic: 
+          - generic: 
+          - generic: 
+        - generic [ref=e301]:
+          - generic [ref=e302]:
+            - text: New order
+            - link "#67890" [ref=e303] [cursor=pointer]:
+              - /url: "#"
+            - text: is placed for Workshow Planning & Budget Estimation
+          - generic [ref=e304]:
+            - generic [ref=e305]: Placed at 4:23 PM by
+            - link "Jimmy Bold" [ref=e306] [cursor=pointer]:
+              - /url: "#"
+    - link "View All Activities  " [ref=e308] [cursor=pointer]:
+      - /url: "#"
+      - text: View All Activities
+      - generic [ref=e309]:
+        - generic [ref=e310]: 
+        - generic: 
+  - generic [ref=e312]:
+    - generic [ref=e313]:
+      - generic [ref=e315]:
+        - link "Brian Cox" [ref=e316] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e317]: Active
+      - generic [ref=e319]:
+        - generic [ref=e320]:
+          - button "   " [ref=e321] [cursor=pointer]:
+            - generic [ref=e322]:
+              - generic [ref=e323]: 
+              - generic: 
+              - generic: 
+              - generic: 
+          - text:   
+        - generic [ref=e325] [cursor=pointer]:
+          - generic [ref=e326]: 
+          - generic: 
+    - generic [ref=e328]:
+      - generic [ref=e330]:
+        - generic [ref=e331]:
+          - img "Pic" [ref=e333]
+          - generic [ref=e334]:
+            - link "Brian Cox" [ref=e335] [cursor=pointer]:
+              - /url: "#"
+            - text: 2 mins
+        - generic [ref=e336]: How likely are you to recommend our company to your friends and family ?
+      - generic [ref=e338]:
+        - generic [ref=e339]:
+          - generic [ref=e340]:
+            - text: 5 mins
+            - link "You" [ref=e341] [cursor=pointer]:
+              - /url: "#"
+          - img "Pic" [ref=e343]
+        - generic [ref=e344]: Hey there, we’re just writing to let you know that you’ve been subscribed to a repository on GitHub.
+      - generic [ref=e346]:
+        - generic [ref=e347]:
+          - img "Pic" [ref=e349]
+          - generic [ref=e350]:
+            - link "Brian Cox" [ref=e351] [cursor=pointer]:
+              - /url: "#"
+            - text: 1 Hour
+        - generic [ref=e352]: Ok, Understood!
+      - generic [ref=e354]:
+        - generic [ref=e355]:
+          - generic [ref=e356]:
+            - text: 2 Hours
+            - link "You" [ref=e357] [cursor=pointer]:
+              - /url: "#"
+          - img "Pic" [ref=e359]
+        - generic [ref=e360]: You’ll receive notifications for all issues, pull requests!
+      - generic [ref=e362]:
+        - generic [ref=e363]:
+          - img "Pic" [ref=e365]
+          - generic [ref=e366]:
+            - link "Brian Cox" [ref=e367] [cursor=pointer]:
+              - /url: "#"
+            - text: 3 Hours
+        - generic [ref=e368]:
+          - text: "You can unwatch this repository immediately by clicking here:"
+          - link "Keenthemes.com" [ref=e369] [cursor=pointer]:
+            - /url: https://keenthemes.com
+      - generic [ref=e371]:
+        - generic [ref=e372]:
+          - generic [ref=e373]:
+            - text: 4 Hours
+            - link "You" [ref=e374] [cursor=pointer]:
+              - /url: "#"
+          - img "Pic" [ref=e376]
+        - generic [ref=e377]: Most purchased Business courses during this sale!
+      - generic [ref=e379]:
+        - generic [ref=e380]:
+          - img "Pic" [ref=e382]
+          - generic [ref=e383]:
+            - link "Brian Cox" [ref=e384] [cursor=pointer]:
+              - /url: "#"
+            - text: 5 Hours
+        - generic [ref=e385]: Company BBQ to celebrate the last quater achievements and goals. Food and drinks provided
+    - generic [ref=e386]:
+      - textbox "Type a message" [ref=e387]
+      - generic [ref=e388]:
+        - generic [ref=e389]:
+          - button "Coming soon" [ref=e390] [cursor=pointer]:
+            - generic [ref=e391]: 
+          - button "Coming soon" [ref=e392] [cursor=pointer]:
+            - generic [ref=e393]:
+              - generic [ref=e394]: 
+              - generic: 
+        - button "Send" [ref=e395] [cursor=pointer]
+  - generic [ref=e397]:
+    - generic [ref=e398]:
+      - heading "Shopping Cart" [level=3] [ref=e399]
+      - generic [ref=e402] [cursor=pointer]:
+        - generic [ref=e403]: 
+        - generic: 
+    - generic [ref=e404]:
+      - generic [ref=e406]:
+        - generic [ref=e407]:
+          - link "Iblender" [ref=e408] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e409]: The best kitchen gadget in 2022
+        - generic [ref=e410]:
+          - generic [ref=e411]: $ 350
+          - generic [ref=e412]: for
+          - generic [ref=e413]: "5"
+          - link "" [ref=e414] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e415]: 
+          - link "" [ref=e416] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e417]: 
+      - generic [ref=e421]:
+        - generic [ref=e422]:
+          - link "SmartCleaner" [ref=e423] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e424]: Smart tool for cooking
+        - generic [ref=e425]:
+          - generic [ref=e426]: $ 650
+          - generic [ref=e427]: for
+          - generic [ref=e428]: "4"
+          - link "" [ref=e429] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e430]: 
+          - link "" [ref=e431] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e432]: 
+      - generic [ref=e436]:
+        - generic [ref=e437]:
+          - link "CameraMaxr" [ref=e438] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e439]: Professional camera for edge
+        - generic [ref=e440]:
+          - generic [ref=e441]: $ 150
+          - generic [ref=e442]: for
+          - generic [ref=e443]: "3"
+          - link "" [ref=e444] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e445]: 
+          - link "" [ref=e446] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e447]: 
+      - generic [ref=e451]:
+        - generic [ref=e452]:
+          - link "$D Printer" [ref=e453] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e454]: Manfactoring unique objekts
+        - generic [ref=e455]:
+          - generic [ref=e456]: $ 1450
+          - generic [ref=e457]: for
+          - generic [ref=e458]: "7"
+          - link "" [ref=e459] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e460]: 
+          - link "" [ref=e461] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e462]: 
+      - generic [ref=e466]:
+        - generic [ref=e467]:
+          - link "MotionWire" [ref=e468] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e469]: Perfect animation tool
+        - generic [ref=e470]:
+          - generic [ref=e471]: $ 650
+          - generic [ref=e472]: for
+          - generic [ref=e473]: "7"
+          - link "" [ref=e474] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e475]: 
+          - link "" [ref=e476] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e477]: 
+      - generic [ref=e481]:
+        - generic [ref=e482]:
+          - link "Samsung" [ref=e483] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e484]: Profile info,Timeline etc
+        - generic [ref=e485]:
+          - generic [ref=e486]: $ 720
+          - generic [ref=e487]: for
+          - generic [ref=e488]: "6"
+          - link "" [ref=e489] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e490]: 
+          - link "" [ref=e491] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e492]: 
+      - generic [ref=e496]:
+        - generic [ref=e497]:
+          - link "$D Printer" [ref=e498] [cursor=pointer]:
+            - /url: "#"
+          - generic [ref=e499]: Manfactoring unique objekts
+        - generic [ref=e500]:
+          - generic [ref=e501]: $ 430
+          - generic [ref=e502]: for
+          - generic [ref=e503]: "8"
+          - link "" [ref=e504] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e505]: 
+          - link "" [ref=e506] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e507]: 
+    - generic [ref=e509]:
+      - generic [ref=e510]:
+        - generic [ref=e511]: Total
+        - generic [ref=e512]: $ 1840.00
+      - generic [ref=e513]:
+        - generic [ref=e514]: Sub total
+        - generic [ref=e515]: $ 246.35
+      - link "Pleace Order" [ref=e517] [cursor=pointer]:
+        - /url: "#"
+  - text:                                                                  *  *          *     * *    * * * *          * *     *      * *  * * * *  * * *   * * *       *               
+  - img

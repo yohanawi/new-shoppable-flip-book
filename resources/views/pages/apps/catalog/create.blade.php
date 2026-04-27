@@ -38,30 +38,18 @@
         </div>
     @endif
 
-    <div class="card border-0 shadow-sm overflow-hidden mb-8">
-        <div class="card-body p-0">
-            <div class="p-10 p-lg-15" style="background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);">
-                <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center">
-                    <div class="mw-600px">
-                        <span class="badge badge-light-primary mb-4">Step 1 of 2</span>
-                        <h1 class="text-white fw-bold mb-4">Upload the PDF first</h1>
-                        <div class="text-white opacity-75 fs-5">
-                            This page only handles the PDF upload. After upload, go to Catalog PDFs to open the file
-                            and use Page Management, Flip Physics, and Slicer on the same PDF.
-                        </div>
-                    </div>
 
-                    <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-light-primary">
-                        <i class="ki-outline ki-left fs-4 me-1"></i>
-                        Catalog PDFs
-                    </a>
-                </div>
-            </div>
-        </div>
+
+    <div class="d-flex flex-wrap justify-content-end gap-6 align-items-center mb-8">
+        <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-light-primary">
+            <i class="ki-outline ki-left fs-4 me-1"></i>
+            Catalog PDFs
+        </a>
     </div>
 
+
     <div class="row g-8 align-items-start">
-        <div class="col-xl-7">
+        <div class="col-xl-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header border-0 pt-8">
                     <div class="card-title flex-column align-items-start">
@@ -72,15 +60,32 @@
                 <div class="card-body pt-0">
                     <form action="{{ route('catalog.pdfs.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-
-                        <div class="mb-8">
-                            <label class="form-label fw-bold text-gray-900 required">PDF Title</label>
-                            <input type="text" name="title" value="{{ old('title') }}"
-                                class="form-control form-control-lg form-control-solid @error('title') is-invalid @enderror"
-                                placeholder="Example: Spring Collection Catalog" required>
-                            @error('title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="row mb-10">
+                            <div class="col-md-8 mb-5 mb-md-0">
+                                <label class="form-label fw-bold text-gray-900 required">PDF Title</label>
+                                <input type="text" name="title" value="{{ old('title') }}"
+                                    class="form-control form-control-lg form-control-solid @error('title') is-invalid @enderror"
+                                    placeholder="Example: Spring Collection Catalog" required>
+                                @error('title')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-gray-900 required">Visibility</label>
+                                <select name="visibility"
+                                    class="form-select form-select-lg form-select-solid @error('visibility') is-invalid @enderror"
+                                    data-control="select2" data-hide-search="true" required>
+                                    @foreach ($visibilityOptions as $key => $label)
+                                        <option value="{{ $key }}"
+                                            {{ old('visibility', \App\Models\CatalogPdf::VISIBILITY_PRIVATE) === $key ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('visibility')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="mb-8">
@@ -121,25 +126,6 @@
                             @enderror
                         </div>
 
-                        <div class="mb-10">
-                            <label class="form-label fw-bold text-gray-900 required">Visibility</label>
-                            <select name="visibility"
-                                class="form-select form-select-lg form-select-solid @error('visibility') is-invalid @enderror"
-                                data-control="select2" data-hide-search="true" required>
-                                @foreach ($visibilityOptions as $key => $label)
-                                    <option value="{{ $key }}"
-                                        {{ old('visibility', \App\Models\CatalogPdf::VISIBILITY_PRIVATE) === $key ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="form-text text-muted">If you choose public, anyone with the share link can view
-                                the edited PDF.</div>
-                            @error('visibility')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
                         <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center">
                             <div class="text-muted fs-7">
                                 After upload, continue from the Catalog PDFs workflow screen.
@@ -155,7 +141,7 @@
             </div>
         </div>
 
-        <div class="col-xl-5">
+        <div class="col-xl-4">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-8 p-lg-10">
                     <h3 class="fw-bold text-gray-900 mb-4">What happens after upload?</h3>
@@ -168,7 +154,9 @@
                             </span>
                             <div>
                                 <div class="fw-bold text-gray-900">Page Management</div>
-                                <div class="text-muted fs-7">Reorder pages, rename them, hide them, or lock them.</div>
+                                <div class="text-muted fs-7">
+                                    Reorder pages, rename them, hide them, or lock them.
+                                </div>
                             </div>
                         </div>
 
@@ -180,7 +168,8 @@
                             </span>
                             <div>
                                 <div class="fw-bold text-gray-900">Flip Physics</div>
-                                <div class="text-muted fs-7">Tune the viewer while still using the same managed PDF.
+                                <div class="text-muted fs-7">
+                                    Tune the viewer while still using the same managed PDF.
                                 </div>
                             </div>
                         </div>
@@ -193,8 +182,9 @@
                             </span>
                             <div>
                                 <div class="fw-bold text-gray-900">Slicer</div>
-                                <div class="text-muted fs-7">Create interactive hotspots and shoppable areas on that
-                                    same PDF.</div>
+                                <div class="text-muted fs-7">
+                                    Create interactive hotspots and shoppable areas on that same PDF.
+                                </div>
                             </div>
                         </div>
                     </div>

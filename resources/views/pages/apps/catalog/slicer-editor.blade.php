@@ -15,10 +15,10 @@
         <div class="d-flex flex-wrap gap-3">
             <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}" class="btn btn-light-primary">Shoppable
                 Preview</a>
-            <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
+            {{-- <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
                 @csrf
                 <button type="submit" class="btn btn-light-success">Generate Page Images</button>
-            </form>
+            </form> --}}
         </div>
     </div>
 
@@ -39,9 +39,8 @@
                             <button type="button" class="btn btn-sm btn-light" id="btnPagePrev">
                                 <i class="bi bi-chevron-left"></i> Previous
                             </button>
-                            <div class="border border-gray-300 rounded-3 bg-body px-4 py-3">
-                                <div class="text-gray-900 fw-semibold lh-sm" id="pageNavTitle">Select a page</div>
-                                <div class="text-muted fs-8 lh-sm mt-1" id="pageNavMeta">Page 0 of 0</div>
+                            <div class="border border-gray-300 rounded-3 bg-body px-4 py-3 min-w-100px text-center">
+                                <div class="text-gray-900 fw-semibold lh-sm" id="pageNavTitle">0</div>
                             </div>
                             <button type="button" class="btn btn-sm btn-light" id="btnPageNext">
                                 Next <i class="bi bi-chevron-right"></i>
@@ -49,7 +48,7 @@
                             <select class="d-none" id="pageSelect">
                                 @foreach ($pages as $p)
                                     <option value="{{ $p->id }}" data-page-number="{{ $p->page_number }}">
-                                        {{ $p->title ?: 'Page ' . $p->page_number }}
+                                        {{ $p->title ?: $p->page_number }}
                                     </option>
                                 @endforeach
                             </select>
@@ -61,11 +60,21 @@
                                 id="toolSelect">Select</button>
                             <button type="button" class="btn btn-sm btn-light" data-tool="rectangle"
                                 id="toolRect">Rectangle</button>
-                            <button type="button" class="btn btn-sm btn-light" data-tool="polygon"
+                            {{-- <button type="button" class="btn btn-sm btn-light" data-tool="polygon"
                                 id="toolPoly">Polygon</button>
                             <button type="button" class="btn btn-sm btn-light" data-tool="free"
-                                id="toolFree">Free</button>
+                                id="toolFree">Free</button> --}}
                             <div class="vr"></div>
+                            <div class="d-none align-items-center gap-2" id="draftActionBar">
+                                <span class="text-muted fw-semibold">Draft</span>
+                                <button type="button" class="btn btn-sm btn-light-danger" id="btnDraftCancel">
+                                    Cancel
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" id="btnDraftSave">
+                                    Save
+                                </button>
+                                <div class="vr"></div>
+                            </div>
                             <button type="button" class="btn btn-sm btn-light" id="btnClear">Clear Selection</button>
                             <button type="button" class="btn btn-sm btn-light" id="btnDeleteSelected">
                                 Delete Selected
@@ -110,7 +119,8 @@
                 </div>
                 <div class="card-body">
                     <div id="thumbnailPreview"
-                        class="position-relative w-100 mx-auto border-2 border-gray-300 rounded-3 overflow-hidden bg-light">
+                        class="position-relative w-100 mx-auto border-2 border-gray-300 rounded-3 overflow-hidden bg-light"
+                        style="max-width: 280px;">
                         <canvas id="thumbnailCanvas" class="w-100 d-block"></canvas>
                         <div id="thumbnailHotspots" class="position-absolute top-0 start-0 w-100 h-100"></div>
                     </div>
@@ -259,6 +269,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light" id="btnNew">New</button>
+                    <button type="button" class="btn btn-light-danger d-none" id="btnDeleteHotspot">Delete</button>
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
                     <button type="submit" form="hotspotForm" class="btn btn-primary" id="btnSave">Save
                         Hotspot</button>
@@ -287,14 +298,17 @@
                 const pagePrevButton = document.getElementById('btnPagePrev');
                 const pageNextButton = document.getElementById('btnPageNext');
                 const pageNavTitle = document.getElementById('pageNavTitle');
-                const pageNavMeta = document.getElementById('pageNavMeta');
                 const hotspotList = document.getElementById('hotspotList');
                 const saveStatus = document.getElementById('saveStatus');
                 const saveButton = document.getElementById('btnSave');
+                const deleteHotspotButton = document.getElementById('btnDeleteHotspot');
                 const hotspotModalEl = document.getElementById('hotspotModal');
                 const hotspotModalTitleEl = document.getElementById('hotspotModalTitle');
                 const openHotspotModalButton = document.getElementById('btnOpenHotspotModal');
                 const hotspotModal = hotspotModalEl ? new bootstrap.Modal(hotspotModalEl) : null;
+                const draftActionBar = document.getElementById('draftActionBar');
+                const draftCancelButton = document.getElementById('btnDraftCancel');
+                const draftSaveButton = document.getElementById('btnDraftSave');
 
                 const formEl = document.getElementById('hotspotForm');
                 const hotspotIdEl = document.getElementById('hotspotId');
@@ -311,9 +325,11 @@
                 const popupImageInput = document.getElementById('popupImage');
                 const popupVideoInput = document.getElementById('popupVideo');
                 const popupVideoUrlEl = document.getElementById('popupVideoUrl');
+                const colorInput = document.getElementById('color');
                 const thumbnailCurrentEl = document.getElementById('thumbnailCurrent');
                 const popupImageCurrentEl = document.getElementById('popupImageCurrent');
                 const popupVideoCurrentEl = document.getElementById('popupVideoCurrent');
+                const thumbnailPreviewMaxWidth = 280;
 
                 let currentTool = 'rectangle';
                 let canvas;
@@ -322,6 +338,27 @@
                 let polygonPoints = [];
                 let polygonTemp = null;
                 let pdfDoc = null;
+                let pendingDraftObject = null;
+                let draftConfirmationRequired = false;
+                const transparentHotspotColor = 'rgba(0, 0, 0, 0)';
+
+                const neutralHotspotFillColor = 'rgba(255, 255, 255, 0.08)';
+                const neutralHotspotSurfaceEdgeColor = 'rgba(148, 163, 184, 0.22)';
+                const neutralHotspotShadowColor = 'rgba(148, 163, 184, 0.38)';
+                const neutralHotspotCastShadowColor = 'rgba(15, 23, 42, 0.12)';
+                const embossedHotspotShadow = {
+
+                    blur: 0,
+                    offsetX: 0,
+                    offsetY: 7,
+                    affectStroke: true,
+                    nonScaling: true,
+                };
+                const colorResolverEl = document.createElement('span');
+                const resolvedColorCache = new Map();
+
+                colorResolverEl.style.display = 'none';
+                document.body.appendChild(colorResolverEl);
 
                 function openHotspotModal(mode = 'create') {
                     if (!hotspotModal) return;
@@ -346,9 +383,52 @@
                 function setFormMode(isEditing) {
                     if (!saveButton) return;
                     saveButton.textContent = isEditing ? 'Update Hotspot' : 'Save Hotspot';
+                    if (deleteHotspotButton) {
+                        deleteHotspotButton.classList.toggle('d-none', !isEditing);
+                    }
                     if (hotspotModalTitleEl) {
                         hotspotModalTitleEl.textContent = isEditing ? 'Edit Hotspot' : 'Create Hotspot';
                     }
+                }
+
+                function isPersistedHotspotObject(obj) {
+                    return !!obj?.__hotspotData?.id;
+                }
+
+                function isDraftHotspotObject(obj) {
+                    return !!obj && !isPersistedHotspotObject(obj);
+                }
+
+                function canvasHasObject(obj) {
+                    return !!canvas && !!obj && canvas.getObjects().includes(obj);
+                }
+
+                function updateDraftActionBar() {
+                    if (!draftActionBar) {
+                        return;
+                    }
+
+                    const hasDraft = canvasHasObject(pendingDraftObject) && isDraftHotspotObject(pendingDraftObject);
+                    if (!hasDraft) {
+                        pendingDraftObject = null;
+                        draftConfirmationRequired = false;
+                    }
+
+                    const shouldShow = hasDraft && draftConfirmationRequired;
+                    draftActionBar.classList.toggle('d-none', !shouldShow);
+                    draftActionBar.classList.toggle('d-flex', shouldShow);
+                }
+
+                function setPendingDraft(obj, requiresConfirmation = true) {
+                    pendingDraftObject = isDraftHotspotObject(obj) ? obj : null;
+                    draftConfirmationRequired = !!pendingDraftObject && requiresConfirmation;
+                    updateDraftActionBar();
+                }
+
+                function clearPendingDraft() {
+                    pendingDraftObject = null;
+                    draftConfirmationRequired = false;
+                    updateDraftActionBar();
                 }
 
                 function clearFileInputs() {
@@ -366,6 +446,105 @@
                         .replace(/>/g, '&gt;')
                         .replace(/"/g, '&quot;')
                         .replace(/'/g, '&#039;');
+                }
+
+                function resolveCssColor(value) {
+                    const trimmed = String(value ?? '').trim();
+                    if (!trimmed) {
+                        return '';
+                    }
+
+                    if (resolvedColorCache.has(trimmed)) {
+                        return resolvedColorCache.get(trimmed);
+                    }
+
+                    if (!window.CSS?.supports?.('color', trimmed)) {
+                        resolvedColorCache.set(trimmed, '');
+                        return '';
+                    }
+
+                    colorResolverEl.style.color = trimmed;
+                    const resolved = window.getComputedStyle(colorResolverEl).color || '';
+                    resolvedColorCache.set(trimmed, resolved);
+
+                    return resolved;
+                }
+
+                function colorWithAlpha(value, alpha) {
+                    const resolved = resolveCssColor(value);
+                    const match = resolved.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/i);
+
+                    if (!match) {
+                        return '';
+                    }
+
+                    return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+                }
+
+                function hotspotSurfaceColors(color, isHover = false) {
+                    const surfaceAlpha = isHover ? 0.18 : 0.10;
+                    const edgeAlpha = isHover ? 0.22 : 0.16;
+
+                    return {
+                        top: colorWithAlpha(color, surfaceAlpha) || (isHover ? 'rgba(255, 255, 255, 0.18)' :
+                            neutralHotspotFillColor),
+                        bottom: colorWithAlpha(color, edgeAlpha) || (isHover ? 'rgba(226, 232, 240, 0.14)' :
+                            'rgba(226, 232, 240, 0.08)'),
+                    };
+                }
+
+                function hotspotBoxShadowCss(color, isHover = false) {
+                    const highlight = isHover ? 'rgba(255, 255, 255, 0.82)' : 'rgba(255, 255, 255, 0.72)';
+                    const edge = colorWithAlpha(color, isHover ? 0.24 : 0.18) || neutralHotspotSurfaceEdgeColor;
+                    const outer = colorWithAlpha(color, isHover ? 0.24 : 0.18) || (isHover ?
+                        'rgba(148, 163, 184, 0.34)' : neutralHotspotShadowColor);
+                    const cast = isHover ? 'rgba(15, 23, 42, 0.16)' : neutralHotspotCastShadowColor;
+
+                    return [
+                        `inset 1px 1px 0 ${highlight}`,
+                        `inset -1px -1px 0 ${edge}`,
+                        `0 ${isHover ? 14 : 10}px ${isHover ? 28 : 22}px ${outer}`,
+                        `0 2px 6px ${cast}`,
+                    ].join(', ');
+                }
+
+                function applyHotspotVisualStyle(obj, color) {
+                    if (!obj) {
+                        return;
+                    }
+
+                    const resolvedColor = resolveCssColor(color);
+                    const hasColor = resolvedColor !== '';
+                    const fillColor = hasColor ? (colorWithAlpha(color, 0.10) || neutralHotspotFillColor) :
+                        neutralHotspotFillColor;
+                    const shadowColor = hasColor ? (colorWithAlpha(color, 0.24) || neutralHotspotShadowColor) :
+                        neutralHotspotShadowColor;
+
+                    obj.set({
+                        fill: fillColor,
+                        stroke: transparentHotspotColor,
+                        strokeWidth: 0,
+                        shadow: {
+                            ...embossedHotspotShadow,
+                            color: shadowColor,
+                        },
+                        strokeUniform: true,
+                        paintFirst: 'stroke',
+                        objectCaching: false,
+                    });
+                    obj.setCoords();
+                }
+
+                function syncCurrentObjectColor() {
+                    if (!currentObject) {
+                        return;
+                    }
+
+                    applyHotspotVisualStyle(currentObject, colorInput?.value || '');
+                    setCurrentObject(currentObject, detectShapeType(currentObject), {
+                        hotspotId: hotspotIdEl.value || currentObject.__hotspotData?.id || ''
+                    });
+                    canvas?.requestRenderAll();
                 }
 
                 function setMediaState(element, html, emptyText) {
@@ -510,6 +689,27 @@
                     canvas.getObjects().forEach(o => canvas.remove(o));
                     canvas.requestRenderAll();
                     resetShapeFields();
+                    clearPendingDraft();
+                }
+
+                function resetHotspotFormFields(options = {}) {
+                    const preserveShapeSelection = options.preserveShapeSelection === true;
+
+                    hotspotIdEl.value = '';
+                    formEl?.reset();
+                    document.getElementById('isActive').checked = true;
+                    setActionValue(actionTypeEl?.value || 'internal_page');
+                    setActiveHotspotListItem(null);
+                    updateCurrentMedia();
+                    clearFileInputs();
+                    setFormMode(false);
+
+                    if (preserveShapeSelection && currentObject) {
+                        applyHotspotVisualStyle(currentObject, colorInput?.value || '');
+                        setCurrentObject(currentObject, detectShapeType(currentObject), {
+                            hotspotId: ''
+                        });
+                    }
                 }
 
                 function resetEditorSelection(options = {}) {
@@ -527,20 +727,99 @@
                     resetShapeFields();
 
                     if (options.clearHotspotId) {
-                        hotspotIdEl.value = '';
-                        setActiveHotspotListItem(null);
-                        updateCurrentMedia();
-                        clearFileInputs();
-                        setFormMode(false);
+                        resetHotspotFormFields();
+                    }
+
+                    if (options.clearPendingDraft !== false) {
+                        clearPendingDraft();
                     }
                 }
 
+                function removeDraftObjects() {
+                    if (!canvas) {
+                        return;
+                    }
+
+                    canvas.getObjects().forEach(obj => {
+                        if (isDraftHotspotObject(obj)) {
+                            canvas.remove(obj);
+                        }
+                    });
+
+                    canvas.requestRenderAll();
+                    clearPendingDraft();
+                }
+
                 function beginNewDrawing() {
+                    removeDraftObjects();
                     resetEditorSelection({
                         preserveCanvasObjects: true,
-                        clearHotspotId: true
+                        clearHotspotId: true,
+                        clearPendingDraft: false
                     });
                     setStatus('');
+                }
+
+                function beginDraftReview(obj) {
+                    if (!obj || !canvas) {
+                        return;
+                    }
+
+                    currentObject = obj;
+                    if (canvas.getActiveObject() !== obj) {
+                        canvas.setActiveObject(obj);
+                    }
+
+                    resetHotspotFormFields({
+                        preserveShapeSelection: true
+                    });
+                    setPendingDraft(obj, true);
+                    canvas.requestRenderAll();
+                    setStatus('Drawing ready. Use Save to continue or Cancel to discard.', 'warning');
+                }
+
+                function reopenPendingDraftActions() {
+                    if (!canvasHasObject(pendingDraftObject) || hotspotIdEl.value) {
+                        return;
+                    }
+
+                    draftConfirmationRequired = true;
+                    updateDraftActionBar();
+                    setStatus('Drawing ready. Use Save to continue or Cancel to discard.', 'warning');
+                }
+
+                function confirmPendingDraft() {
+                    const draftObject = canvasHasObject(pendingDraftObject) ? pendingDraftObject : currentObject;
+                    if (!draftObject || !isDraftHotspotObject(draftObject)) {
+                        setStatus('Draw a hotspot first.', 'danger');
+                        return;
+                    }
+
+                    currentObject = draftObject;
+                    if (canvas.getActiveObject() !== draftObject) {
+                        canvas.setActiveObject(draftObject);
+                    }
+
+                    setCurrentObject(draftObject, detectShapeType(draftObject), {
+                        hotspotId: ''
+                    });
+                    draftConfirmationRequired = false;
+                    updateDraftActionBar();
+                    setFormMode(false);
+                    setStatus('');
+                    openHotspotModal('create');
+                }
+
+                async function cancelPendingDraft() {
+                    const draftObject = canvasHasObject(pendingDraftObject) ? pendingDraftObject : currentObject;
+                    if (!draftObject || !isDraftHotspotObject(draftObject)) {
+                        return;
+                    }
+
+                    clearPendingDraft();
+                    await deleteCanvasObject(draftObject);
+                    resetHotspotFormFields();
+                    setStatus('Drawing removed.');
                 }
 
                 async function deleteCanvasObject(targetObject = null) {
@@ -550,6 +829,10 @@
                     if (!obj) return;
 
                     const hotspotId = obj.__hotspotData?.id || hotspotIdEl.value;
+
+                    if (pendingDraftObject === obj) {
+                        clearPendingDraft();
+                    }
 
                     canvas.remove(obj);
                     canvas.discardActiveObject();
@@ -584,6 +867,55 @@
                     setStatus('Deleted.', 'success');
                     await loadHotspots();
                     await renderThumbnailPreview();
+                }
+
+                async function deleteHotspotFromModal() {
+                    const hotspotId = hotspotIdEl.value;
+                    if (!hotspotId) {
+                        setStatus('Select a saved hotspot to delete.', 'warning');
+                        return;
+                    }
+
+                    let confirmed = false;
+
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        const result = await window.Swal.fire({
+                            text: 'Delete this hotspot? This action cannot be undone.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, delete it',
+                            cancelButtonText: 'Cancel',
+                            buttonsStyling: false,
+                            focusCancel: true,
+                            customClass: {
+                                confirmButton: 'btn btn-danger',
+                                cancelButton: 'btn btn-light'
+                            }
+                        });
+
+                        confirmed = !!result.isConfirmed;
+                    } else {
+                        confirmed = window.confirm('Delete this hotspot? This action cannot be undone.');
+                    }
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    const targetObject = canvas?.getObjects().find(obj => String(obj.__hotspotData?.id || '') ===
+                        String(hotspotId)) || currentObject;
+
+                    if (deleteHotspotButton) {
+                        deleteHotspotButton.disabled = true;
+                    }
+
+                    try {
+                        await deleteCanvasObject(targetObject);
+                    } finally {
+                        if (deleteHotspotButton) {
+                            deleteHotspotButton.disabled = false;
+                        }
+                    }
                 }
 
                 function renderDeleteControl(ctx, left, top) {
@@ -810,24 +1142,22 @@
                 }
 
                 function updatePageNavigation() {
-                    if (!pageSelect || !pageNavTitle || !pageNavMeta) {
+                    if (!pageSelect || !pageNavTitle) {
                         return;
                     }
 
                     const index = currentPageIndex();
-                    const total = pageSelect.options.length;
                     const option = index >= 0 ? pageSelect.options[index] : null;
                     const pageNumber = option ? option.getAttribute('data-page-number') || String(index + 1) : '0';
 
-                    pageNavTitle.textContent = option ? option.textContent.trim() : 'No pages available';
-                    pageNavMeta.textContent = `Page ${pageNumber} of ${total}`;
+                    pageNavTitle.textContent = `Page ${pageNumber}`;
 
                     if (pagePrevButton) {
                         pagePrevButton.disabled = index <= 0;
                     }
 
                     if (pageNextButton) {
-                        pageNextButton.disabled = index < 0 || index >= total - 1;
+                        pageNextButton.disabled = index < 0 || index >= pageSelect.options.length - 1;
                     }
                 }
 
@@ -870,6 +1200,7 @@
                 }
 
                 function fillFormFromHotspot(h) {
+                    clearPendingDraft();
                     hotspotIdEl.value = String(h.id);
                     setActionValue(h.action_type);
 
@@ -915,10 +1246,7 @@
                     if (hotspot) {
                         fillFormFromHotspot(hotspot);
                     } else {
-                        setActiveHotspotListItem(null);
-                        updateCurrentMedia();
-                        clearFileInputs();
-                        setFormMode(false);
+                        beginDraftReview(obj);
                     }
 
                     if (canvas.getActiveObject() !== obj) {
@@ -929,10 +1257,8 @@
                         hotspotId: hotspot?.id || obj.__hotspotData?.id || ''
                     });
                     canvas.requestRenderAll();
-                    setStatus('');
-
-                    if (!hotspot) {
-                        openHotspotModal('create');
+                    if (hotspot) {
+                        setStatus('');
                     }
                 }
 
@@ -951,6 +1277,7 @@
                         if (!obj) continue;
 
                         obj.__hotspotData = hotspot;
+                        applyHotspotVisualStyle(obj, hotspot.color);
                         obj.selectable = true;
                         obj.evented = true;
                         canvas.add(obj);
@@ -1029,7 +1356,7 @@
                         const viewport = page.getViewport({
                             scale: 1
                         });
-                        const maxWidth = 400;
+                        const maxWidth = thumbnailPreviewMaxWidth;
                         const scale = maxWidth / viewport.width;
                         const scaledViewport = page.getViewport({
                             scale
@@ -1050,7 +1377,7 @@
                         img.crossOrigin = 'anonymous';
                         await new Promise((resolve) => {
                             img.onload = () => {
-                                const maxWidth = 400;
+                                const maxWidth = thumbnailPreviewMaxWidth;
                                 const scale = maxWidth / img.width;
                                 thumbnailCanvas.width = Math.floor(img.width * scale);
                                 thumbnailCanvas.height = Math.floor(img.height * scale);
@@ -1077,9 +1404,13 @@
                     // Create hotspot overlays
                     for (const h of hotspots) {
                         const div = document.createElement('div');
-                        div.className = 'position-absolute border border-2 pe-none bg-opacity-25';
-                        div.classList.add(h.is_active ? 'border-success' : 'border-primary');
-                        div.classList.add(h.is_active ? 'bg-success' : 'bg-primary');
+                        const resolvedColor = resolveCssColor(h.color);
+                        const surfaceColors = hotspotSurfaceColors(h.color);
+
+                        div.className = 'position-absolute pe-none';
+                        div.style.background =
+                            `linear-gradient(145deg, ${surfaceColors.top}, ${surfaceColors.bottom})`;
+                        div.style.boxShadow = hotspotBoxShadowCss(h.color);
 
                         // Position using percentage values (x, y, w, h are normalized 0-1)
                         div.style.left = (h.x * 100) + '%';
@@ -1136,12 +1467,15 @@
                     enlivenShapeObject(scaledData).then((obj) => {
                         if (!obj) return;
                         obj.__hotspotData = h;
+                        applyHotspotVisualStyle(obj, h.color);
                         canvas.add(obj);
                         applyCanvasSelection(obj, h);
                     });
                 }
 
                 async function saveHotspot() {
+                    syncCurrentObjectColor();
+
                     if (!currentObject || !backgroundLoaded) {
                         setStatus('Draw or select a hotspot first.', 'danger');
                         return;
@@ -1153,9 +1487,11 @@
                     const urlBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer'));
                     const url = isUpdate ? (urlBase + '/hotspots/' + hotspotIdEl.value) : (urlBase + '/pages/' + pid +
                         '/hotspots');
-                    const method = isUpdate ? 'PATCH' : 'POST';
 
                     const fd = new FormData(formEl);
+                    if (isUpdate) {
+                        fd.set('_method', 'PATCH');
+                    }
                     fd.set('shape_type', shapeTypeEl.value);
                     fd.set('shape_data', shapeDataEl.value);
                     fd.set('x', bboxXEl.value);
@@ -1168,7 +1504,7 @@
 
                     try {
                         const res = await fetch(url, {
-                            method,
+                            method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': csrfToken,
                                 'Accept': 'application/json'
@@ -1192,6 +1528,7 @@
                         const json = await res.json();
                         const saved = json.data;
                         hotspotIdEl.value = String(saved.id);
+                        clearPendingDraft();
                         updateCurrentMedia(saved);
                         clearFileInputs();
 
@@ -1305,7 +1642,8 @@
                             setCurrentObject(rect, 'rectangle', {
                                 hotspotId: ''
                             });
-                            openHotspotModal('create');
+                            syncCurrentObjectColor();
+                            beginDraftReview(rect);
                             rect = null;
                         }
                     });
@@ -1332,7 +1670,8 @@
                         setCurrentObject(poly, 'polygon', {
                             hotspotId: ''
                         });
-                        openHotspotModal('create');
+                        syncCurrentObjectColor();
+                        beginDraftReview(poly);
                     });
 
                     // Capture free-draw path
@@ -1351,11 +1690,8 @@
                         setCurrentObject(path, 'free', {
                             hotspotId: ''
                         });
-                        setFormMode(false);
-                        updateCurrentMedia();
-                        clearFileInputs();
-                        setStatus('');
-                        openHotspotModal('create');
+                        syncCurrentObjectColor();
+                        beginDraftReview(path);
                     });
 
                     canvas.on('object:modified', function(event) {
@@ -1367,7 +1703,14 @@
                             hotspotId: hotspot?.id || ''
                         });
                         setActiveHotspotListItem(hotspot?.id || null);
-                        setStatus('Shape updated. Save hotspot to keep changes.', 'warning');
+                        if (hotspot) {
+                            clearPendingDraft();
+                            setStatus('Shape updated. Save hotspot to keep changes.', 'warning');
+                            return;
+                        }
+
+                        setPendingDraft(obj, true);
+                        setStatus('Drawing updated. Use Save to continue or Cancel to discard.', 'warning');
                     });
 
                     function syncSelectionFromCanvas(event) {
@@ -1389,6 +1732,7 @@
                     canvas.on('selection:cleared', function() {
                         resetShapeFields();
                         setActiveHotspotListItem(null);
+                        updateDraftActionBar();
                     });
                 }
 
@@ -1404,10 +1748,7 @@
                 }
 
                 function resetFormForNew() {
-                    hotspotIdEl.value = '';
-                    formEl.reset();
-                    document.getElementById('isActive').checked = true;
-                    setActionValue(actionTypeEl.value);
+                    resetHotspotFormFields();
                     resetEditorSelection({
                         preserveCanvasObjects: true,
                         clearHotspotId: true
@@ -1439,6 +1780,10 @@
 
                 // Wire UI
                 bindActionTypeEvents();
+                ['change', 'input'].forEach(eventName => {
+                    colorInput?.addEventListener(eventName, syncCurrentObjectColor);
+                });
+                hotspotModalEl?.addEventListener('hidden.bs.modal', reopenPendingDraftActions);
 
                 document.getElementById('toolRect')?.addEventListener('click', () => {
                     setTool('rectangle');
@@ -1465,6 +1810,9 @@
                 document.getElementById('btnDeleteSelected')?.addEventListener('click', () => {
                     deleteCanvasObject();
                 });
+                deleteHotspotButton?.addEventListener('click', deleteHotspotFromModal);
+                draftCancelButton?.addEventListener('click', cancelPendingDraft);
+                draftSaveButton?.addEventListener('click', confirmPendingDraft);
                 document.getElementById('btnNew')?.addEventListener('click', resetFormForNew);
                 openHotspotModalButton?.addEventListener('click', () => {
                     resetFormForNew();

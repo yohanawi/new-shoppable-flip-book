@@ -173,6 +173,7 @@
             <div class="row g-6 g-xl-8">
                 @foreach ($pdfs as $pdf)
                     @php($shareUrl = route('catalog.pdfs.share', $pdf))
+                    @php($previewStudioUrl = route('catalog.pdfs.share-preview.edit', $pdf))
 
                     <div class="col-md-6 col-xl-4 col-xxl-3">
                         <div class="card card-flush h-100 shadow-sm">
@@ -227,15 +228,48 @@
                                             </div>
 
                                             <div class="menu-item px-3">
-                                                <button type="button"
-                                                    class="menu-link px-3 border-0 bg-transparent w-100 text-start"
-                                                    data-catalog-unpublish="{{ $pdf->id }}"
-                                                    data-catalog-title="{{ e($pdf->title) }}">
+                                                @if ($pdf->visibility === \App\Models\CatalogPdf::VISIBILITY_PUBLIC)
+                                                    <form action="{{ route('catalog.pdfs.unpublish', $pdf) }}"
+                                                        method="POST" data-swal-confirm
+                                                        data-swal-title="Unpublish PDF?"
+                                                        data-swal-text="This will make {{ e($pdf->title) }} private and disable public share access."
+                                                        data-swal-confirm-text="Yes, unpublish">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit"
+                                                            class="menu-link px-3 border-0 bg-transparent w-100 text-start">
+                                                            <span class="menu-icon">
+                                                                <i class="ki-outline ki-eye-slash fs-3"></i>
+                                                            </span>
+                                                            <span class="menu-title">Unpublish</span>
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('catalog.pdfs.publish', $pdf) }}"
+                                                        method="POST" data-swal-confirm
+                                                        data-swal-title="Publish PDF?"
+                                                        data-swal-text="This will make {{ e($pdf->title) }} public and enable share access."
+                                                        data-swal-confirm-text="Yes, publish">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit"
+                                                            class="menu-link px-3 border-0 bg-transparent w-100 text-start">
+                                                            <span class="menu-icon">
+                                                                <i class="ki-outline ki-eye fs-3"></i>
+                                                            </span>
+                                                            <span class="menu-title">Publish</span>
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
+
+                                            <div class="menu-item px-3">
+                                                <a href="{{ $previewStudioUrl }}" class="menu-link px-3">
                                                     <span class="menu-icon">
-                                                        <i class="ki-outline ki-eye-slash fs-3"></i>
+                                                        <i class="ki-outline ki-slider-horizontal fs-3"></i>
                                                     </span>
-                                                    <span class="menu-title">Unpublish</span>
-                                                </button>
+                                                    <span class="menu-title">Preview Studio</span>
+                                                </a>
                                             </div>
 
                                             <div class="separator my-2"></div>
@@ -372,17 +406,6 @@
                                 confirmButtonText: 'OK'
                             });
                         }
-                    });
-                });
-
-                document.querySelectorAll('[data-catalog-unpublish]').forEach((button) => {
-                    button.addEventListener('click', () => {
-                        showAlert({
-                            icon: 'info',
-                            title: 'Unpublish unavailable',
-                            text: `A dedicated unpublish action is not wired for "${button.dataset.catalogTitle}" yet.`,
-                            confirmButtonText: 'OK'
-                        });
                     });
                 });
 

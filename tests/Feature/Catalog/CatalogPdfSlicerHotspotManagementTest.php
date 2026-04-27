@@ -210,6 +210,60 @@ class CatalogPdfSlicerHotspotManagementTest extends TestCase
         $this->assertFalse(Storage::disk('local')->exists($storedPath));
     }
 
+    public function test_owner_can_delete_hotspot_and_its_media(): void
+    {
+        Storage::fake('local');
+
+        /** @var User $user */
+        $user = User::factory()->create();
+        [$pdf, $page] = $this->createSlicerPdfForUser($user);
+
+        $thumbnailPath = 'catalog-slicer/' . $pdf->id . '/hotspots/delete-thumb.png';
+        $popupImagePath = 'catalog-slicer/' . $pdf->id . '/hotspots/delete-image.png';
+        $popupVideoPath = 'catalog-slicer/' . $pdf->id . '/hotspots/delete-video.mp4';
+
+        Storage::disk('local')->put($thumbnailPath, 'thumb-bytes');
+        Storage::disk('local')->put($popupImagePath, 'image-bytes');
+        Storage::disk('local')->put($popupVideoPath, 'video-bytes');
+
+        $hotspot = CatalogPdfHotspot::create([
+            'catalog_pdf_id' => $pdf->id,
+            'catalog_pdf_page_id' => $page->id,
+            'display_order' => 1,
+            'shape_type' => CatalogPdfHotspot::SHAPE_RECTANGLE,
+            'shape_data' => $this->shapeData(),
+            'x' => 0.20,
+            'y' => 0.25,
+            'w' => 0.18,
+            'h' => 0.12,
+            'action_type' => CatalogPdfHotspot::ACTION_POPUP_WINDOW,
+            'is_active' => true,
+            'title' => 'Delete Me',
+            'thumbnail_disk' => 'local',
+            'thumbnail_path' => $thumbnailPath,
+            'popup_image_disk' => 'local',
+            'popup_image_path' => $popupImagePath,
+            'popup_video_disk' => 'local',
+            'popup_video_path' => $popupVideoPath,
+        ]);
+
+        $response = $this->actingAs($user)->delete(
+            route('catalog.pdfs.slicer.hotspots.destroy', [$pdf, $hotspot]),
+            [],
+            ['Accept' => 'application/json']
+        );
+
+        $response->assertOk();
+        $response->assertJson(['ok' => true]);
+
+        $this->assertDatabaseMissing('catalog_pdf_hotspots', [
+            'id' => $hotspot->id,
+        ]);
+        $this->assertFalse(Storage::disk('local')->exists($thumbnailPath));
+        $this->assertFalse(Storage::disk('local')->exists($popupImagePath));
+        $this->assertFalse(Storage::disk('local')->exists($popupVideoPath));
+    }
+
     private function createSlicerPdfForUser(User $user): array
     {
         $pdf = CatalogPdf::create([

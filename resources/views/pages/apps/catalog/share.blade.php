@@ -211,17 +211,33 @@
         }
 
         .hotspot {
+            --hotspot-surface-top: rgba(255, 255, 255, 0.10);
+            --hotspot-surface-bottom: rgba(226, 232, 240, 0.08);
+            --hotspot-surface-top-hover: rgba(255, 255, 255, 0.18);
+            --hotspot-surface-bottom-hover: rgba(226, 232, 240, 0.14);
+            --hotspot-highlight: rgba(255, 255, 255, 0.72);
+            --hotspot-edge: rgba(148, 163, 184, 0.22);
+            --hotspot-shadow: rgba(148, 163, 184, 0.28);
+            --hotspot-shadow-hover: rgba(148, 163, 184, 0.34);
+            --hotspot-cast-shadow: rgba(15, 23, 42, 0.12);
+            --hotspot-cast-shadow-hover: rgba(15, 23, 42, 0.16);
             position: absolute;
-            border: 2px solid rgba(37, 99, 235, 0.85);
-            background: rgba(37, 99, 235, 0.14);
+            border: none;
+            background: linear-gradient(145deg, var(--hotspot-surface-top), var(--hotspot-surface-bottom));
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+            box-shadow: inset 1px 1px 0 var(--hotspot-highlight), inset -1px -1px 0 var(--hotspot-edge),
+                0 10px 22px var(--hotspot-shadow), 0 2px 6px var(--hotspot-cast-shadow);
         }
 
+        .hotspot.has-color {}
+
         .hotspot:hover {
-            background: rgba(37, 99, 235, 0.25);
-            transform: scale(1.02);
+            background: linear-gradient(145deg, var(--hotspot-surface-top-hover), var(--hotspot-surface-bottom-hover));
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.82), inset -1px -1px 0 var(--hotspot-edge),
+                0 14px 28px var(--hotspot-shadow-hover), 0 2px 6px var(--hotspot-cast-shadow-hover);
         }
 
         .share-side-button {
@@ -563,6 +579,10 @@
             }
 
             function updatePageInfo() {
+                if (!pageInfoEl) {
+                    return;
+                }
+
                 if (!$flipbook) {
                     pageInfoEl.textContent = 'Page 1';
                     return;
@@ -575,6 +595,37 @@
 
             function mediaUrl(id, kind) {
                 return mediaBase + '/' + id + '/media/' + kind;
+            }
+
+            function resolveCssColor(value) {
+                const trimmed = String(value ?? '').trim();
+                if (!trimmed || !window.CSS?.supports?.('color', trimmed)) {
+                    return '';
+                }
+
+                const probe = document.createElement('span');
+                probe.style.display = 'none';
+                probe.style.color = trimmed;
+                document.body.appendChild(probe);
+                const resolved = window.getComputedStyle(probe).color || '';
+                probe.remove();
+
+                return resolved;
+            }
+
+            function colorWithAlpha(value, alpha) {
+                const resolved = resolveCssColor(value);
+                const match = resolved.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/i);
+
+                if (!match) {
+                    return '';
+                }
+
+                return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+            }
+
+            function colorWithFallback(value, alpha, fallback) {
+                return colorWithAlpha(value, alpha) || fallback;
             }
 
             function normalizePagesForRendering(pdf) {
@@ -773,9 +824,24 @@
                         hotspotEl.style.top = (hotspot.y * 100) + '%';
                         hotspotEl.style.width = (hotspot.w * 100) + '%';
                         hotspotEl.style.height = (hotspot.h * 100) + '%';
-                        if (hotspot.color) {
-                            hotspotEl.style.borderColor = hotspot.color;
+                        const trimmedColor = String(hotspot.color ?? '').trim();
+                        if (trimmedColor && window.CSS?.supports?.('color', trimmedColor)) {
+                            hotspotEl.classList.add('has-color');
                         }
+                        hotspotEl.style.setProperty('--hotspot-surface-top', colorWithFallback(hotspot.color,
+                            0.10, 'rgba(255, 255, 255, 0.10)'));
+                        hotspotEl.style.setProperty('--hotspot-surface-bottom', colorWithFallback(hotspot.color,
+                            0.08, 'rgba(226, 232, 240, 0.08)'));
+                        hotspotEl.style.setProperty('--hotspot-surface-top-hover', colorWithFallback(hotspot.color,
+                            0.18, 'rgba(255, 255, 255, 0.18)'));
+                        hotspotEl.style.setProperty('--hotspot-surface-bottom-hover', colorWithFallback(hotspot.color,
+                            0.12, 'rgba(226, 232, 240, 0.14)'));
+                        hotspotEl.style.setProperty('--hotspot-edge', colorWithFallback(hotspot.color, 0.18,
+                            'rgba(148, 163, 184, 0.22)'));
+                        hotspotEl.style.setProperty('--hotspot-shadow', colorWithFallback(hotspot.color, 0.18,
+                            'rgba(148, 163, 184, 0.28)'));
+                        hotspotEl.style.setProperty('--hotspot-shadow-hover', colorWithFallback(hotspot.color,
+                            0.24, 'rgba(148, 163, 184, 0.34)'));
                         hotspotEl.title = hotspot.title || hotspot.action_type;
                         hotspotEl.addEventListener('click', (event) => {
                             event.preventDefault();

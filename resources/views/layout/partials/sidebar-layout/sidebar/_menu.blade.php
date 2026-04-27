@@ -1,4 +1,10 @@
 <div class="app-sidebar-menu overflow-hidden flex-column-fluid">
+    @php
+        $catalogCreateActive = request()->routeIs('catalog.pdfs.create');
+        $catalogSharePreviewActive = request()->routeIs('catalog.pdfs.share-preview.*');
+        $catalogListActive =
+            request()->routeIs('catalog.pdfs.*') && !$catalogCreateActive && !$catalogSharePreviewActive;
+    @endphp
     <div id="kt_app_sidebar_menu_wrapper" class="app-sidebar-wrapper hover-scroll-overlay-y my-5" data-kt-scroll="true"
         data-kt-scroll-activate="true" data-kt-scroll-height="auto"
         data-kt-scroll-dependencies="#kt_app_sidebar_logo, #kt_app_sidebar_footer"
@@ -77,7 +83,7 @@
                 </span>
                 <div class="menu-sub menu-sub-accordion">
                     <div class="menu-item">
-                        <a class="menu-link {{ request()->routeIs('catalog.pdfs.create') ? 'active' : '' }}"
+                        <a class="menu-link {{ $catalogCreateActive ? 'active' : '' }}"
                             href="{{ route('catalog.pdfs.create') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
@@ -88,7 +94,7 @@
                 </div>
                 <div class="menu-sub menu-sub-accordion">
                     <div class="menu-item">
-                        <a class="menu-link {{ request()->routeIs('catalog.pdfs.*') ? 'active' : '' }}"
+                        <a class="menu-link {{ $catalogListActive ? 'active' : '' }}"
                             href="{{ route('catalog.pdfs.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
@@ -97,9 +103,9 @@
                         </a>
                     </div>
                 </div>
-                <div class="menu-sub menu-sub-accordion">
+                {{-- <div class="menu-sub menu-sub-accordion">
                     <div class="menu-item">
-                        <a class="menu-link {{ request()->routeIs('catalog.pdfs.share-preview.*') ? 'active' : '' }}"
+                        <a class="menu-link {{ $catalogSharePreviewActive ? 'active' : '' }}"
                             href="{{ route('catalog.pdfs.share-preview.index') }}">
                             <span class="menu-bullet">
                                 <span class="bullet bullet-dot"></span>
@@ -107,7 +113,7 @@
                             <span class="menu-title">Share Preview Studio</span>
                         </a>
                     </div>
-                </div>
+                </div> --}}
             </div>
             @if (auth()->user()?->isCustomer())
                 <div class="menu-item pt-5">

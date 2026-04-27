@@ -323,6 +323,146 @@ class CatalogPdfController extends Controller
             ->with('success', 'PDF deleted successfully.');
     }
 
+    public function unpublish(CatalogPdf $catalogPdf)
+    {
+        $this->authorizeManagementAccess($catalogPdf);
+
+        if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE) {
+            return redirect()
+                ->route('catalog.pdfs.index')
+                ->with('info', 'PDF is already private.');
+        }
+
+        $catalogPdf->storage_disk = $this->moveAssetToPrivateDisk($catalogPdf->storage_disk, $catalogPdf->pdf_path);
+
+        $catalogPdf->pages()->get()->each(function ($page) {
+            $page->image_disk = $this->moveAssetToPrivateDisk($page->image_disk, $page->image_path);
+            $page->save();
+        });
+
+        $catalogPdf->hotspots()->get()->each(function ($hotspot) {
+            $hotspot->thumbnail_disk = $this->moveAssetToPrivateDisk($hotspot->thumbnail_disk, $hotspot->thumbnail_path);
+            $hotspot->popup_image_disk = $this->moveAssetToPrivateDisk($hotspot->popup_image_disk, $hotspot->popup_image_path);
+            $hotspot->popup_video_disk = $this->moveAssetToPrivateDisk($hotspot->popup_video_disk, $hotspot->popup_video_path);
+            $hotspot->save();
+        });
+
+        if ($catalogPdf->sharePreviewSetting) {
+            $catalogPdf->sharePreviewSetting->background_image_disk = $this->moveAssetToPrivateDisk(
+                $catalogPdf->sharePreviewSetting->background_image_disk,
+                $catalogPdf->sharePreviewSetting->background_image_path
+            );
+            $catalogPdf->sharePreviewSetting->background_video_disk = $this->moveAssetToPrivateDisk(
+                $catalogPdf->sharePreviewSetting->background_video_disk,
+                $catalogPdf->sharePreviewSetting->background_video_path
+            );
+            $catalogPdf->sharePreviewSetting->logo_disk = $this->moveAssetToPrivateDisk(
+                $catalogPdf->sharePreviewSetting->logo_disk,
+                $catalogPdf->sharePreviewSetting->logo_path
+            );
+            $catalogPdf->sharePreviewSetting->save();
+        }
+
+        $catalogPdf->visibility = CatalogPdf::VISIBILITY_PRIVATE;
+        $catalogPdf->save();
+
+        return redirect()
+            ->route('catalog.pdfs.index')
+            ->with('success', 'PDF unpublished successfully. It is now private.');
+    }
+
+    public function publish(CatalogPdf $catalogPdf)
+    {
+        $this->authorizeManagementAccess($catalogPdf);
+
+        if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PUBLIC) {
+            return redirect()
+                ->route('catalog.pdfs.index')
+                ->with('info', 'PDF is already public.');
+        }
+
+        $catalogPdf->storage_disk = $this->moveAssetToPublicDisk($catalogPdf->storage_disk, $catalogPdf->pdf_path);
+
+        $catalogPdf->pages()->get()->each(function ($page) {
+            $page->image_disk = $this->moveAssetToPublicDisk($page->image_disk, $page->image_path);
+            $page->save();
+        });
+
+        $catalogPdf->hotspots()->get()->each(function ($hotspot) {
+            $hotspot->thumbnail_disk = $this->moveAssetToPublicDisk($hotspot->thumbnail_disk, $hotspot->thumbnail_path);
+            $hotspot->popup_image_disk = $this->moveAssetToPublicDisk($hotspot->popup_image_disk, $hotspot->popup_image_path);
+            $hotspot->popup_video_disk = $this->moveAssetToPublicDisk($hotspot->popup_video_disk, $hotspot->popup_video_path);
+            $hotspot->save();
+        });
+
+        if ($catalogPdf->sharePreviewSetting) {
+            $catalogPdf->sharePreviewSetting->background_image_disk = $this->moveAssetToPublicDisk(
+                $catalogPdf->sharePreviewSetting->background_image_disk,
+                $catalogPdf->sharePreviewSetting->background_image_path
+            );
+            $catalogPdf->sharePreviewSetting->background_video_disk = $this->moveAssetToPublicDisk(
+                $catalogPdf->sharePreviewSetting->background_video_disk,
+                $catalogPdf->sharePreviewSetting->background_video_path
+            );
+            $catalogPdf->sharePreviewSetting->logo_disk = $this->moveAssetToPublicDisk(
+                $catalogPdf->sharePreviewSetting->logo_disk,
+                $catalogPdf->sharePreviewSetting->logo_path
+            );
+            $catalogPdf->sharePreviewSetting->save();
+        }
+
+        $catalogPdf->visibility = CatalogPdf::VISIBILITY_PUBLIC;
+        $catalogPdf->save();
+
+        return redirect()
+            ->route('catalog.pdfs.index')
+            ->with('success', 'PDF published successfully. Public share access is enabled.');
+    }
+
+    private function moveAssetToPrivateDisk(?string $disk, ?string $path): ?string
+    {
+        if (!filled($path)) {
+            return $disk;
+        }
+
+        $sourceDisk = $disk ?: 'local';
+
+        if ($sourceDisk !== 'public') {
+            return $sourceDisk;
+        }
+
+        if (!Storage::disk('public')->exists($path)) {
+            return $sourceDisk;
+        }
+
+        Storage::disk('local')->put($path, Storage::disk('public')->get($path));
+        Storage::disk('public')->delete($path);
+
+        return 'local';
+    }
+
+    private function moveAssetToPublicDisk(?string $disk, ?string $path): ?string
+    {
+        if (!filled($path)) {
+            return $disk;
+        }
+
+        $sourceDisk = $disk ?: 'local';
+
+        if ($sourceDisk !== 'local') {
+            return $sourceDisk;
+        }
+
+        if (!Storage::disk('local')->exists($path)) {
+            return $sourceDisk;
+        }
+
+        Storage::disk('public')->put($path, Storage::disk('local')->get($path));
+        Storage::disk('local')->delete($path);
+
+        return 'public';
+    }
+
     private function authorizeManagementAccess(CatalogPdf $pdf): void
     {
         if ($this->currentUserIsAdmin()) {

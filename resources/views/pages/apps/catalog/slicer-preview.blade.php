@@ -159,6 +159,11 @@
                             <i class="bi bi-clipboard"></i> Copy
                         </button>
                     </div>
+                    <div class="d-grid mt-4">
+                        <a href="{{ route('catalog.pdfs.share-preview.edit', $pdf) }}" class="btn btn-light-info">
+                            <i class="bi bi-layout-text-window-reverse me-2"></i> Share Preview Studio
+                        </a>
+                    </div>
                     <div class="mt-3 d-none" id="copySuccess">
                         <div class="alert alert-success">Link copied to clipboard!</div>
                     </div>
@@ -212,11 +217,45 @@
                 let pdfDocumentPromise = null;
                 let pdfDocument = null;
                 let renderGeneration = 0;
+                const colorResolverEl = document.createElement('span');
+                const resolvedColorCache = new Map();
+
+                colorResolverEl.style.display = 'none';
+                document.body.appendChild(colorResolverEl);
 
                 const mediaBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/hotspots'));
+                const flipSoundUrl = @json(asset('assets/media/sounds/page-flip-new.mp3'));
                 const statusTones = ['badge-light-info', 'badge-light-success', 'badge-light-warning',
                     'badge-light-danger'
                 ];
+                let flipSound = null;
+                let lastTurnedPage = 1;
+
+                function createFlipSound() {
+                    try {
+                        const audio = new Audio(flipSoundUrl);
+                        audio.preload = 'auto';
+                        audio.volume = 0.35;
+                        return audio;
+                    } catch (error) {
+                        return null;
+                    }
+                }
+
+                function playFlipSoundIfPageChanged(pageNumber = null) {
+                    const current = Number(pageNumber || (hasActiveFlipbook() ? $flipbook.turn('page') : 1) || 1);
+                    const shouldPlay = current !== lastTurnedPage;
+                    lastTurnedPage = current;
+
+                    if (!shouldPlay || !flipSound) {
+                        return;
+                    }
+
+                    try {
+                        flipSound.currentTime = 0;
+                        flipSound.play().catch(() => {});
+                    } catch (error) {}
+                }
 
                 const hotspotByPageId = {};
                 for (const h of hotspots) {
@@ -331,25 +370,74 @@
                     return Math.min(Math.max(value, min), max);
                 }
 
+                function resolveCssColor(value) {
+                    const trimmed = String(value ?? '').trim();
+                    if (!trimmed) {
+                        return '';
+                    }
+
+                    if (resolvedColorCache.has(trimmed)) {
+                        return resolvedColorCache.get(trimmed);
+                    }
+
+                    if (!window.CSS?.supports?.('color', trimmed)) {
+                        resolvedColorCache.set(trimmed, '');
+                        return '';
+                    }
+
+                    colorResolverEl.style.color = trimmed;
+                    const resolved = window.getComputedStyle(colorResolverEl).color || '';
+                    resolvedColorCache.set(trimmed, resolved);
+
+                    return resolved;
+                }
+
                 function alphaColor(color, alpha) {
-                    if (typeof color !== 'string') {
+                    const resolved = resolveCssColor(color);
+                    const match = resolved.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/i);
+
+                    if (!match) {
                         return '';
                     }
 
-                    const hex = color.trim();
-                    if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)) {
-                        return '';
-                    }
+                    return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+                }
 
-                    const normalized = hex.length === 4 ?
-                        `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` :
-                        hex;
+                function hotspotVisualTokens(color, isHover = false) {
+                    return {
+                        surfaceTop: colorWithFallback(color, isHover ? 0.18 : 0.10, isHover ?
+                            'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.10)'),
+                        surfaceBottom: colorWithFallback(color, isHover ? 0.12 : 0.08, isHover ?
+                            'rgba(226, 232, 240, 0.14)' : 'rgba(226, 232, 240, 0.08)'),
+                        borderColor: colorWithFallback(color, 0.42, 'rgba(255, 255, 255, 0.72)'),
+                        insetHighlight: isHover ? 'rgba(255, 255, 255, 0.82)' : 'rgba(255, 255, 255, 0.72)',
+                        insetShade: colorWithFallback(color, isHover ? 0.24 : 0.18, 'rgba(148, 163, 184, 0.22)'),
+                        outerShadow: colorWithFallback(color, isHover ? 0.24 : 0.18, isHover ?
+                            'rgba(148, 163, 184, 0.34)' : 'rgba(148, 163, 184, 0.28)'),
+                        castShadow: isHover ? 'rgba(15, 23, 42, 0.16)' : 'rgba(15, 23, 42, 0.12)',
+                    };
+                }
 
-                    const red = parseInt(normalized.slice(1, 3), 16);
-                    const green = parseInt(normalized.slice(3, 5), 16);
-                    const blue = parseInt(normalized.slice(5, 7), 16);
+                function colorWithFallback(color, alpha, fallback) {
+                    return alphaColor(color, alpha) || fallback;
+                }
 
-                    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+                function hotspotBoxShadow(tokens, isHover = false) {
+                    return [
+                        `inset 1px 1px 0 ${tokens.insetHighlight}`,
+                        `inset -1px -1px 0 ${tokens.insetShade}`,
+                        `0 ${isHover ? 14 : 10}px ${isHover ? 28 : 22}px ${tokens.outerShadow}`,
+                        `0 2px 6px ${tokens.castShadow}`,
+                    ].join(', ');
+                }
+
+                function applyHotspotButtonVisual(button, color, isHover = false) {
+                    const tokens = hotspotVisualTokens(color, isHover);
+                    button.style.background =
+                        `linear-gradient(145deg, ${tokens.surfaceTop}, ${tokens.surfaceBottom})`;
+                    button.style.border = 'none';
+                    button.style.boxShadow = hotspotBoxShadow(tokens, isHover);
+                    button.style.transform = isHover ? 'translateY(-1px) scale(1.01)' : 'none';
                 }
 
                 function normalizedBbox(shape, hotspot) {
@@ -382,17 +470,13 @@
                 function createHotspotElement(hotspot) {
                     const button = document.createElement('button');
                     button.type = 'button';
-                    button.className = 'position-absolute border border-2 rounded-3 shadow-sm';
+                    button.className = 'position-absolute rounded-3';
                     button.title = hotspot.title || hotspot.action_type;
                     button.setAttribute('aria-label', hotspot.title || hotspot.action_type);
 
                     const shape = hotspot.runtime_shape || hotspot.shape_data?.runtimeShape || hotspot.shape_data
                         ?.runtime_shape || null;
                     const bbox = normalizedBbox(shape, hotspot);
-                    const borderColor = hotspot.color || 'rgba(var(--bs-primary-rgb), 0.85)';
-                    const backgroundColor = alphaColor(hotspot.color, 0.16) || 'rgba(var(--bs-primary-rgb), 0.12)';
-                    const hoverBackgroundColor = alphaColor(hotspot.color, 0.24) ||
-                        'rgba(var(--bs-primary-rgb), 0.2)';
 
                     button.style.left = `${bbox.x * 100}%`;
                     button.style.top = `${bbox.y * 100}%`;
@@ -401,8 +485,9 @@
                     button.style.padding = '0';
                     button.style.margin = '0';
                     button.style.cursor = 'pointer';
-                    button.style.backgroundColor = backgroundColor;
-                    button.style.borderColor = borderColor;
+                    button.style.transition =
+                        'transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease';
+                    applyHotspotButtonVisual(button, hotspot.color, false);
 
                     if (shape && shape.type !== 'rectangle') {
                         const clipPath = shapeClipPath(shape, bbox);
@@ -413,13 +498,11 @@
                     }
 
                     button.addEventListener('mouseenter', () => {
-                        button.classList.add('shadow');
-                        button.style.backgroundColor = hoverBackgroundColor;
+                        applyHotspotButtonVisual(button, hotspot.color, true);
                     });
 
                     button.addEventListener('mouseleave', () => {
-                        button.classList.remove('shadow');
-                        button.style.backgroundColor = backgroundColor;
+                        applyHotspotButtonVisual(button, hotspot.color, false);
                     });
 
                     button.addEventListener('click', (event) => {
@@ -804,6 +887,10 @@
                     }
 
                     const currentPage = hasActiveFlipbook() ? $flipbook.turn('page') : 1;
+                    lastTurnedPage = Number(currentPage || 1);
+                    if (!flipSound) {
+                        flipSound = createFlipSound();
+                    }
                     destroyTurnIfExists();
                     syncStageState();
 
@@ -852,6 +939,7 @@
 
                         $flipbook.bind('turned', function() {
                             updatePageIndicator();
+                            playFlipSoundIfPageChanged();
                         });
 
                         if (currentPage > 1) {

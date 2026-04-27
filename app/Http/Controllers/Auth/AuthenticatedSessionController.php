@@ -20,8 +20,6 @@ class AuthenticatedSessionController extends Controller
      */
     public function create()
     {
-        addJavascriptFile('assets/js/custom/authentication/sign-in/general.js');
-
         return view('pages/auth.login');
     }
 

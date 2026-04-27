@@ -39,6 +39,16 @@
 
     <div class="row g-8">
         <div class="col-xl-8">
+            @if ($pdf->isUploadedTemplate())
+                <div class="alert alert-primary d-flex align-items-start gap-3 mb-8">
+                    <i class="ki-outline ki-abstract-26 fs-2 text-primary mt-1"></i>
+                    <div>
+                        <div class="fw-bold mb-1">Use all functions on this PDF</div>
+                        <div>Open any tool below. They all work on the same uploaded file.</div>
+                    </div>
+                </div>
+            @endif
+
             <div class="card border-0 shadow-sm">
                 <div class="card-header border-0 pt-8">
                     <div class="card-title flex-column align-items-start">
@@ -103,27 +113,6 @@
                                 </div>
                                 <div class="text-muted fs-7 flex-grow-1">
                                     Change page flip behavior, duration, elevation, display mode, and render quality.
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 col-xl-12">
-                            <div class="border rounded-4 h-100 p-6 bg-light-warning d-flex flex-column">
-                                <div class="d-flex align-items-center flex-row justify-content-between mb-2">
-                                    <div class="d-flex align-items-center flex-row gap-5">
-                                        <div class="symbol symbol-40px">
-                                            <span class="symbol-label bg-white">
-                                                <i class="ki-outline ki-picture fs-2x text-warning"></i>
-                                            </span>
-                                        </div>
-                                        <h4 class="fw-bold text-gray-900">Share Preview Studio</h4>
-                                    </div>
-                                    <a href="{{ route('catalog.pdfs.share-preview.edit', $pdf) }}"
-                                        class="btn btn-warning w-28">Open</a>
-                                </div>
-                                <div class="text-muted fs-7 flex-grow-1">
-                                    Customize the public share preview with background media, logo branding, title text,
-                                    and exact logo placement.
                                 </div>
                             </div>
                         </div>

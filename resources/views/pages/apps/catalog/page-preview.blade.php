@@ -64,6 +64,11 @@
                             <i class="bi bi-clipboard"></i> Copy
                         </button>
                     </div>
+                    <div class="d-grid mt-4">
+                        <a href="{{ route('catalog.pdfs.share-preview.edit', $pdf) }}" class="btn btn-light-info">
+                            <i class="bi bi-layout-text-window-reverse me-2"></i> Share Preview Studio
+                        </a>
+                    </div>
                     <div class="mt-3 d-none" id="copySuccess">
                         <div class="alert alert-success">Link copied to clipboard!</div>
                     </div>

@@ -60,18 +60,23 @@
 
         .hotspot {
             position: absolute;
-            border: 2px solid rgba(var(--bs-primary-rgb), 0.85);
-            background: rgba(var(--bs-primary-rgb), 0.10);
+            border: none;
+            background: transparent;
             cursor: pointer;
             border-radius: 6px;
             transition: all 0.3s ease;
+            box-shadow: none;
         }
 
-        .hotspot:hover {
-            background: rgba(var(--bs-primary-rgb), 0.22);
-            border-color: rgba(var(--bs-primary-rgb), 1);
+        .hotspot.has-color {
+            border: 2px solid var(--hotspot-border, transparent);
+            background: var(--hotspot-fill, transparent);
+        }
+
+        .hotspot.has-color:hover {
+            background: var(--hotspot-fill-hover, transparent);
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.3);
+            box-shadow: 0 4px 12px var(--hotspot-shadow, transparent);
         }
 
         .toolbar-glass {
@@ -490,9 +495,13 @@
                             div.style.top = (h.y * 100) + '%';
                             div.style.width = (h.w * 100) + '%';
                             div.style.height = (h.h * 100) + '%';
-                            if (h.color) {
-                                div.style.borderColor = h.color;
-                                div.style.backgroundColor = 'rgba(0,0,0,0)';
+                            const trimmedColor = String(h.color ?? '').trim();
+                            if (trimmedColor && window.CSS?.supports?.('color', trimmedColor)) {
+                                div.classList.add('has-color');
+                                div.style.setProperty('--hotspot-border', trimmedColor);
+                                div.style.setProperty('--hotspot-fill', 'transparent');
+                                div.style.setProperty('--hotspot-fill-hover', 'transparent');
+                                div.style.setProperty('--hotspot-shadow', 'transparent');
                             }
                             div.title = h.title || h.action_type;
                             div.addEventListener('click', (e) => {
@@ -767,55 +776,38 @@
 
                     setStatus('Ready to flip', 'success');
 
-                    function makeClickWavDataUri() {
-                        const sampleRate = 8000;
-                        const durationMs = 40;
-                        const sampleCount = Math.floor(sampleRate * (durationMs / 1000));
-                        const numChannels = 1;
-                        const bitsPerSample = 8;
-                        const blockAlign = numChannels * (bitsPerSample / 8);
-                        const byteRate = sampleRate * blockAlign;
-                        const dataSize = sampleCount * blockAlign;
+                    const flipSoundUrl = @json(asset('assets/media/sounds/page-flip-new.mp3'));
+                    let flipSound = null;
+                    let lastTurnedPage = 1;
 
-                        const buffer = new ArrayBuffer(44 + dataSize);
-                        const view = new DataView(buffer);
-
-                        function writeStr(offset, str) {
-                            for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+                    function createFlipSound() {
+                        try {
+                            const audio = new Audio(flipSoundUrl);
+                            audio.preload = 'auto';
+                            audio.volume = 0.35;
+                            return audio;
+                        } catch (error) {
+                            return null;
                         }
-
-                        writeStr(0, 'RIFF');
-                        view.setUint32(4, 36 + dataSize, true);
-                        writeStr(8, 'WAVE');
-                        writeStr(12, 'fmt ');
-                        view.setUint32(16, 16, true);
-                        view.setUint16(20, 1, true);
-                        view.setUint16(22, numChannels, true);
-                        view.setUint32(24, sampleRate, true);
-                        view.setUint32(28, byteRate, true);
-                        view.setUint16(32, blockAlign, true);
-                        view.setUint16(34, bitsPerSample, true);
-                        writeStr(36, 'data');
-                        view.setUint32(40, dataSize, true);
-
-                        for (let i = 0; i < sampleCount; i++) {
-                            const t = i / sampleRate;
-                            const freq = 600 - 400 * (t / (durationMs / 1000));
-                            const s = Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * 6);
-                            const v = Math.max(0, Math.min(255, Math.round(128 + s * 100)));
-                            view.setUint8(44 + i, v);
-                        }
-
-                        const bytes = new Uint8Array(buffer);
-                        let bin = '';
-                        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-                        return 'data:audio/wav;base64,' + btoa(bin);
                     }
 
-                    let flipSound = null;
+                    function playFlipSoundIfPageChanged(pageNumber = null) {
+                        const current = Number(pageNumber || ($flipbook ? $flipbook.turn('page') : 1) || 1);
+                        const shouldPlay = current !== lastTurnedPage;
+                        lastTurnedPage = current;
+
+                        if (!shouldPlay || !flipSound) {
+                            return;
+                        }
+
+                        try {
+                            flipSound.currentTime = 0;
+                            flipSound.play().catch(() => {});
+                        } catch (error) {}
+                    }
+
                     try {
-                        flipSound = new Audio(makeClickWavDataUri());
-                        flipSound.volume = 0.3;
+                        flipSound = createFlipSound();
                     } catch (e) {
                         flipSound = null;
                     }
@@ -823,6 +815,7 @@
                     const $flipbook = $('#flipbook');
                     let baseBookWidth = (sizing.display === 'double' ? sizing.w * 2 : sizing.w);
                     let baseBookHeight = sizing.h;
+                    lastTurnedPage = 1;
 
                     let zoom = 1.0;
                     const zoomMin = 0.8;
@@ -902,13 +895,7 @@
                         track('page_turn', {
                             page_number: current,
                         });
-
-                        if (flipSound) {
-                            try {
-                                flipSound.currentTime = 0;
-                                flipSound.play().catch(() => {});
-                            } catch (e) {}
-                        }
+                        playFlipSoundIfPageChanged(current);
                     });
 
                     track('view', {

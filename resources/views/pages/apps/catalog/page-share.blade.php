@@ -12,7 +12,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: #1e1e2d;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             height: 100vh;
@@ -25,17 +25,19 @@
         }
 
         .share-toolbar {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
         .share-title {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 700;
             margin: 0;
         }
 
@@ -55,7 +57,8 @@
         #flipbook .page {
             background: #fff;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
         }
 
         #flipbook canvas {
@@ -68,12 +71,24 @@
             color: #fff;
             font-size: 14px;
             margin-left: 15px;
+            font-weight: 600;
         }
 
         .loading-message {
             color: #fff;
             text-align: center;
             font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-toolbar {
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-toolbar:hover {
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -86,13 +101,13 @@
                 <span class="page-info" id="pageInfo"></span>
             </div>
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-light" id="btnPrev">
+                <button type="button" class="btn btn-sm btn-light btn-toolbar" id="btnPrev">
                     <i class="bi bi-chevron-left"></i> Previous
                 </button>
-                <button type="button" class="btn btn-sm btn-light" id="btnNext">
+                <button type="button" class="btn btn-sm btn-light btn-toolbar" id="btnNext">
                     Next <i class="bi bi-chevron-right"></i>
                 </button>
-                <a class="btn btn-sm btn-primary" href="{{ route('catalog.pdfs.download', $pdf) }}">
+                <a class="btn btn-sm btn-primary btn-toolbar" href="{{ route('catalog.pdfs.download', $pdf) }}">
                     <i class="bi bi-download"></i> Download
                 </a>
             </div>

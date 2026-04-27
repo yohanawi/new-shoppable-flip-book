@@ -176,6 +176,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{catalogPdf}/share-preview', [CatalogPdfSharePreviewController::class, 'edit'])->name('share-preview.edit');
         Route::post('/{catalogPdf}/share-preview', [CatalogPdfSharePreviewController::class, 'update'])->name('share-preview.update');
         Route::post('/{catalogPdf}/workflow', [CatalogPdfController::class, 'selectWorkflow'])->name('workflow.select');
+        Route::patch('/{catalogPdf}/publish', [CatalogPdfController::class, 'publish'])->name('publish');
+        Route::patch('/{catalogPdf}/unpublish', [CatalogPdfController::class, 'unpublish'])->name('unpublish');
         Route::get('/{catalogPdf}/source', [CatalogPdfController::class, 'source'])->name('source');
         Route::delete('/{catalogPdf}', [CatalogPdfController::class, 'destroy'])->name('delete');
 

@@ -135,7 +135,8 @@
                         <span class="menu-heading fw-bold text-uppercase fs-7">Analytics</span>
                     </div>
                 </div>
-                @if (auth()->user()?->isAdmin() || app(\App\Services\BillingManager::class)->hasFeature(auth()->user(), 'analytics'))
+                @php($canAccessAnalytics = (auth()->user()?->isAdmin() ?? false) || ((auth()->user()?->can('customer.analytics.view') ?? false) && app(\App\Services\BillingManager::class)->hasFeature(auth()->user(), 'analytics')))
+                @if ($canAccessAnalytics)
                     <div class="menu-item">
                         <a class="menu-link {{ request()->routeIs('analytics.*') ? 'active' : '' }}"
                             href="{{ route('analytics.index') }}">

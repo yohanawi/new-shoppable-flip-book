@@ -46,8 +46,11 @@ class CatalogPdfFlipPhysicsController extends Controller
     {
         $this->assertFlipPhysics($catalogPdf);
 
-        // For private PDFs, only owner can access
-        if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $catalogPdf->user_id !== Auth::id()) {
+        if (
+            !Auth::user()?->isAdmin()
+            && $catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE
+            && $catalogPdf->user_id !== Auth::id()
+        ) {
             abort(403);
         }
 

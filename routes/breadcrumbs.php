@@ -27,6 +27,36 @@ Breadcrumbs::for('billing.index', function (BreadcrumbTrail $trail) {
     $trail->push('Billing', route('billing.index'));
 });
 
+Breadcrumbs::for('billing.plans', function (BreadcrumbTrail $trail) {
+    $trail->parent('billing.index');
+    $trail->push('Plans', route('billing.plans'));
+});
+
+Breadcrumbs::for('billing.payment-methods.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('billing.index');
+    $trail->push('Payment Methods', route('billing.payment-methods.index'));
+});
+
+Breadcrumbs::for('billing.invoices.index', function (BreadcrumbTrail $trail) {
+    $trail->parent('billing.index');
+    $trail->push('Invoices and Activity', route('billing.invoices.index'));
+});
+
+Breadcrumbs::for('billing.payments.create', function (BreadcrumbTrail $trail) {
+    $trail->parent('billing.index');
+    $trail->push('Submit Payment', route('billing.payments.create'));
+});
+
+Breadcrumbs::for('billing.payments.history', function (BreadcrumbTrail $trail) {
+    $trail->parent('billing.index');
+    $trail->push('Payment History', route('billing.payments.history'));
+});
+
+Breadcrumbs::for('billing.payments.show', function (BreadcrumbTrail $trail, $paymentRequest) {
+    $trail->parent('billing.payments.history');
+    $trail->push($paymentRequest->requestNumber(), route('billing.payments.show', $paymentRequest));
+});
+
 Breadcrumbs::for('admin.billing.index', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
     $trail->push('Billing Dashboard', route('admin.billing.index'));

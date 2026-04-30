@@ -47,6 +47,7 @@ class CatalogPdfFlipPhysicsTest extends TestCase
         $editResponse->assertSee('Snappy (fast)');
         $editResponse->assertSee('Smooth (soft)');
         $editResponse->assertSee('Minimal (lightweight)');
+        $editResponse->assertSee('Custom');
 
         $this->assertDatabaseHas('catalog_pdf_flip_physics_settings', [
             'catalog_pdf_id' => $pdf->id,
@@ -101,6 +102,51 @@ class CatalogPdfFlipPhysicsTest extends TestCase
             'elevation' => 42,
             'display_mode' => 'double',
             'render_scale_percent' => 130,
+        ]);
+    }
+
+    public function test_saving_flip_physics_with_custom_preset_persists_manual_values(): void
+    {
+        Storage::fake('local');
+
+        /** @var User $user */
+        $user = User::factory()->create();
+
+        $pdf = CatalogPdf::create([
+            'user_id' => $user->id,
+            'title' => 'Custom Catalog',
+            'template_type' => CatalogPdf::TEMPLATE_FLIP_PHYSICS,
+            'visibility' => CatalogPdf::VISIBILITY_PRIVATE,
+            'storage_disk' => 'local',
+            'pdf_path' => 'catalog-pdfs/custom-catalog.pdf',
+            'original_filename' => 'custom-catalog.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 128,
+        ]);
+
+        Storage::disk('local')->put($pdf->pdf_path, "%PDF-test\n");
+
+        $response = $this->actingAs($user)->post(route('catalog.pdfs.flip-physics.update', $pdf), [
+            'preset' => CatalogPdfFlipPhysicsSetting::PRESET_CUSTOM,
+            'duration_ms' => 860,
+            'gradients' => '1',
+            'acceleration' => '0',
+            'elevation' => 58,
+            'display_mode' => 'single',
+            'render_scale_percent' => 145,
+        ]);
+
+        $response->assertRedirect(route('catalog.pdfs.flip-physics.edit', $pdf));
+
+        $this->assertDatabaseHas('catalog_pdf_flip_physics_settings', [
+            'catalog_pdf_id' => $pdf->id,
+            'preset' => CatalogPdfFlipPhysicsSetting::PRESET_CUSTOM,
+            'duration_ms' => 860,
+            'gradients' => true,
+            'acceleration' => false,
+            'elevation' => 58,
+            'display_mode' => 'single',
+            'render_scale_percent' => 145,
         ]);
     }
 

@@ -201,6 +201,18 @@ class CatalogPdfController extends Controller
 
     public function share(CatalogPdf $catalogPdf)
     {
+        if ($catalogPdf->isFlipPhysicsTemplate()) {
+            return redirect()->route('catalog.pdfs.flip-physics.share', $catalogPdf);
+        }
+
+        if ($catalogPdf->isSlicerTemplate()) {
+            return redirect()->route('catalog.pdfs.slicer.share', $catalogPdf);
+        }
+
+        if ($catalogPdf->isPageManagementTemplate()) {
+            return app(CatalogPdfPageManagementController::class)->share($catalogPdf);
+        }
+
         $this->authorizeViewerAccess($catalogPdf);
 
         $pages = $catalogPdf->pages()

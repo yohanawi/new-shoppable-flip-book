@@ -42,9 +42,9 @@
                 <div class="card-header border-0 pt-7">
                     <h3 class="card-title align-items-start flex-column">
                         <span class="card-label fw-bold text-gray-900">Live Preview</span>
-                        <span class="text-muted mt-1 fw-semibold fs-7">Preview the current flip settings before
-                            saving
-                            them.</span>
+                        <span class="text-muted mt-1 fw-semibold fs-7">
+                            Preview the current flip settings before saving them.
+                        </span>
                     </h3>
                 </div>
 
@@ -240,6 +240,7 @@
         <script>
             (function() {
                 const pdfUrl = @json($pdfUrl);
+                const customPreset = @json(\App\Models\CatalogPdfFlipPhysicsSetting::PRESET_CUSTOM);
                 const presetDefaults = @json($presetDefaults);
                 const hasOldPreset = @json(old('preset') !== null);
                 const statusEl = document.getElementById('status');
@@ -271,6 +272,7 @@
                 let renderGeneration = 0;
                 let renderTimer = null;
                 let keyboardBound = false;
+                let isApplyingPreset = false;
 
                 if (window.pdfjsLib) {
                     window.pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -293,11 +295,17 @@
                 }
 
                 function applyPresetToForm(presetKey) {
+                    if (presetKey === customPreset) {
+                        return;
+                    }
+
                     const preset = presetDefaults[presetKey];
 
                     if (!preset) {
                         return;
                     }
+
+                    isApplyingPreset = true;
 
                     durationInput.value = preset.duration_ms;
                     elevationInput.value = preset.elevation;
@@ -307,6 +315,22 @@
                     gradientsInput.checked = !!preset.gradients;
                     accelerationInput.checked = !!preset.acceleration;
                     syncSelect(displayModeInput);
+
+                    isApplyingPreset = false;
+                }
+
+                function markPresetAsCustom() {
+                    if (presetInput.value === customPreset) {
+                        return;
+                    }
+
+                    presetInput.value = customPreset;
+                    syncSelect(presetInput);
+                }
+
+                function handlePresetChange() {
+                    applyPresetToForm(presetInput.value);
+                    scheduleRender(0);
                 }
 
                 function readSettings() {
@@ -507,10 +531,11 @@
                     renderAll();
                 });
 
-                presetInput.addEventListener('change', (event) => {
-                    applyPresetToForm(event.target.value);
-                    scheduleRender(0);
-                });
+                presetInput.addEventListener('change', handlePresetChange);
+
+                if (window.jQuery) {
+                    window.jQuery(presetInput).on('select2:select', handlePresetChange);
+                }
 
                 elevationInput.addEventListener('input', () => {
                     elevationValue.textContent = elevationInput.value;
@@ -520,6 +545,10 @@
                     const eventName = field.type === 'checkbox' || field.tagName === 'SELECT' ? 'change' : 'input';
                     field.addEventListener(eventName, () => {
                         if (field !== presetInput) {
+                            if (!isApplyingPreset) {
+                                markPresetAsCustom();
+                            }
+
                             scheduleRender();
                         }
                     });

@@ -155,6 +155,7 @@ class DashboardService
         $usage = $this->billingManager->usageFor($user);
         $storageLimit = $this->billingManager->storageLimitBytes($plan);
         $analyticsEnabled = $this->billingManager->hasFeature($user, 'analytics');
+        $canAccessAnalytics = $analyticsEnabled && $user->can('customer.analytics.view');
         $avgDailyViews = (int) round(array_sum($viewTrend['points']) / max(count($viewTrend['points']), 1));
 
         return [
@@ -177,12 +178,12 @@ class DashboardService
                 'subtitle' => 'Current billing limits and feature access',
                 'plan_name' => $plan->name,
                 'plan_description' => $plan->description,
-                'analytics_enabled' => $analyticsEnabled,
+                'analytics_enabled' => $canAccessAnalytics,
                 'storage' => $this->billingManager->formatBytes((int) ($usage['storage_bytes'] ?? 0)) . ' / ' . $this->billingManager->formatBytes($storageLimit),
                 'catalogs' => number_format((int) ($usage['flipbooks_count'] ?? 0)),
                 'billing_url' => route('billing.index'),
-                'analytics_url' => $analyticsEnabled ? route('analytics.index') : route('billing.index'),
-                'analytics_cta' => $analyticsEnabled ? 'Open Analytics' : 'Upgrade For Analytics',
+                'analytics_url' => $canAccessAnalytics ? route('analytics.index') : route('billing.index'),
+                'analytics_cta' => $canAccessAnalytics ? 'Open Analytics' : 'Upgrade For Analytics',
             ],
         ];
     }

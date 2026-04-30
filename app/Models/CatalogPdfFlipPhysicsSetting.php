@@ -37,6 +37,7 @@ class CatalogPdfFlipPhysicsSetting extends Model
     public const PRESET_SNAPPY = 'snappy';
     public const PRESET_SMOOTH = 'smooth';
     public const PRESET_MINIMAL = 'minimal';
+    public const PRESET_CUSTOM = 'custom';
 
     public static function defaultPreset(): string
     {
@@ -50,6 +51,7 @@ class CatalogPdfFlipPhysicsSetting extends Model
             self::PRESET_SNAPPY => 'Snappy (fast)',
             self::PRESET_SMOOTH => 'Smooth (soft)',
             self::PRESET_MINIMAL => 'Minimal (lightweight)',
+            self::PRESET_CUSTOM => 'Custom',
         ];
     }
 
@@ -101,6 +103,11 @@ class CatalogPdfFlipPhysicsSetting extends Model
         return $defaults[$normalizedPreset];
     }
 
+    public static function isCustomPreset(?string $preset): bool
+    {
+        return $preset === self::PRESET_CUSTOM;
+    }
+
     public function pdf(): BelongsTo
     {
         return $this->belongsTo(CatalogPdf::class, 'catalog_pdf_id');
@@ -113,15 +120,22 @@ class CatalogPdfFlipPhysicsSetting extends Model
             : self::defaultPreset();
 
         $this->preset = $normalizedPreset;
+
+        $baseAttributes = self::isCustomPreset($normalizedPreset)
+            ? $this->currentAttributesWithFallback()
+            : self::attributesForPreset($normalizedPreset);
+
         $this->fill(array_merge(
-            self::attributesForPreset($normalizedPreset),
+            $baseAttributes,
             $overrides
         ));
     }
 
     public function viewerSettings(): array
     {
-        $defaults = self::attributesForPreset($this->preset ?: self::defaultPreset());
+        $defaults = self::isCustomPreset($this->preset)
+            ? self::attributesForPreset(self::defaultPreset())
+            : self::attributesForPreset($this->preset ?: self::defaultPreset());
 
         return [
             'duration' => (int) ($this->duration_ms ?? $defaults['duration_ms']),
@@ -130,6 +144,20 @@ class CatalogPdfFlipPhysicsSetting extends Model
             'elevation' => (int) ($this->elevation ?? $defaults['elevation']),
             'displayMode' => (string) ($this->display_mode ?? $defaults['display_mode']),
             'renderScale' => (int) ($this->render_scale_percent ?? $defaults['render_scale_percent']) / 100,
+        ];
+    }
+
+    private function currentAttributesWithFallback(): array
+    {
+        $defaults = self::attributesForPreset($this->preset ?: self::defaultPreset());
+
+        return [
+            'duration_ms' => (int) ($this->duration_ms ?? $defaults['duration_ms']),
+            'gradients' => (bool) ($this->gradients ?? $defaults['gradients']),
+            'acceleration' => (bool) ($this->acceleration ?? $defaults['acceleration']),
+            'elevation' => (int) ($this->elevation ?? $defaults['elevation']),
+            'display_mode' => (string) ($this->display_mode ?? $defaults['display_mode']),
+            'render_scale_percent' => (int) ($this->render_scale_percent ?? $defaults['render_scale_percent']),
         ];
     }
 }

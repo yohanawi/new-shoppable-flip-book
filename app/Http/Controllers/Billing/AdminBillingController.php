@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Billing;
 
 use App\Http\Controllers\Controller;
 use App\Models\BillingInvoice;
+use App\Models\BillingPaymentRequest;
 use App\Models\BillingTransaction;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\BillingPaymentRequestWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,6 +18,8 @@ class AdminBillingController extends Controller
 {
     public function index()
     {
+        $plans = Plan::query()->withCount('subscriptions')->orderBy('sort_order')->orderBy('id')->get();
+
         $metrics = [
             'monthly_revenue' => (int) BillingInvoice::query()
                 ->where('status', 'paid')
@@ -31,12 +35,49 @@ class AdminBillingController extends Controller
             'failed_payments' => BillingInvoice::query()->where('status', 'failed')->count(),
         ];
 
+        $billingNotifications = array_values(array_filter([
+            $metrics['failed_payments'] > 0 ? [
+                'tone' => 'danger',
+                'icon' => 'cross-circle',
+                'title' => 'Failed payments need attention',
+                'message' => number_format($metrics['failed_payments']) . ' invoices have failed and may require customer follow-up.',
+                'anchor' => '#billing-invoices',
+                'action' => 'Review invoices',
+            ] : null,
+            $plans->filter(fn(Plan $plan) => !$plan->isFree() && blank($plan->stripe_price_id))->isNotEmpty() ? [
+                'tone' => 'warning',
+                'icon' => 'abstract-26',
+                'title' => 'Stripe plan mapping is incomplete',
+                'message' => 'One or more paid plans are missing a Stripe price ID and cannot be swapped safely.',
+                'anchor' => '#billing-plan-management',
+                'action' => 'Open plan management',
+            ] : null,
+            Subscription::query()->where('stripe_status', 'past_due')->exists() ? [
+                'tone' => 'primary',
+                'icon' => 'information-5',
+                'title' => 'Past due subscriptions detected',
+                'message' => 'Customers with past due subscriptions may need card updates or manual outreach.',
+                'anchor' => '#billing-subscriptions',
+                'action' => 'Open subscriptions',
+            ] : null,
+            Subscription::query()->whereNull('plan_id')->exists() ? [
+                'tone' => 'info',
+                'icon' => 'arrows-circle',
+                'title' => 'Some Stripe subscriptions are unmapped',
+                'message' => 'At least one synced subscription is not linked to a local plan record yet.',
+                'anchor' => '#billing-subscriptions',
+                'action' => 'Inspect subscriptions',
+            ] : null,
+        ]));
+
         return view('pages.apps.billing.admin', [
             'metrics' => $metrics,
-            'plans' => Plan::query()->orderBy('sort_order')->orderBy('id')->get(),
+            'plans' => $plans,
+            'paymentRequests' => BillingPaymentRequest::query()->with(['user', 'plan', 'invoice', 'reviewer'])->latest('submitted_at')->limit(20)->get(),
             'subscriptions' => Subscription::query()->with(['owner', 'plan'])->latest()->limit(20)->get(),
             'invoices' => BillingInvoice::query()->with(['user', 'subscription.plan'])->latest()->limit(20)->get(),
             'transactions' => BillingTransaction::query()->with(['user', 'invoice'])->latest()->limit(20)->get(),
+            'billingNotifications' => $billingNotifications,
         ]);
     }
 
@@ -74,7 +115,11 @@ class AdminBillingController extends Controller
         $plan = Plan::query()->findOrFail($validated['plan_id']);
 
         if ($plan->isFree()) {
-            $subscription->cancel();
+            if ($subscription->isManualBilling()) {
+                $subscription->cancelManual();
+            } else {
+                $subscription->cancel();
+            }
             $subscription->forceFill(['plan_id' => null])->save();
 
             return redirect()->route('admin.billing.index')->with('success', 'Subscription cancellation scheduled and customer will fall back to the free plan.');
@@ -82,6 +127,17 @@ class AdminBillingController extends Controller
 
         if (blank($plan->stripe_price_id)) {
             return redirect()->route('admin.billing.index')->withErrors(['admin_billing' => 'Selected plan does not have a Stripe price ID.']);
+        }
+
+        if ($subscription->isManualBilling()) {
+            $subscription->forceFill([
+                'plan_id' => $plan->id,
+                'stripe_price' => $plan->stripe_price_id ?: 'manual_plan_' . $plan->id,
+                'ends_at' => null,
+                'stripe_status' => 'active',
+            ])->save();
+
+            return redirect()->route('admin.billing.index')->with('success', 'Manual subscription plan updated successfully.');
         }
 
         try {
@@ -96,9 +152,40 @@ class AdminBillingController extends Controller
 
     public function cancelSubscription(Subscription $subscription): RedirectResponse
     {
-        $subscription->cancel();
+        if ($subscription->isManualBilling()) {
+            $subscription->cancelManual();
+        } else {
+            $subscription->cancel();
+        }
 
         return redirect()->route('admin.billing.index')->with('success', 'Subscription cancellation scheduled.');
+    }
+
+    public function reviewPaymentRequest(Request $request, BillingPaymentRequest $paymentRequest, BillingPaymentRequestWorkflowService $workflowService): RedirectResponse
+    {
+        if ($paymentRequest->status === BillingPaymentRequest::STATUS_APPROVED) {
+            return redirect()->route('admin.billing.index')->withErrors(['admin_billing' => 'This payment request has already been approved.']);
+        }
+
+        $validated = $request->validate([
+            'review_action' => ['required', 'string', Rule::in(['approve', 'reject'])],
+            'admin_note' => [
+                Rule::requiredIf(fn() => $request->input('review_action') === 'reject'),
+                'nullable',
+                'string',
+                'max:2000',
+            ],
+        ]);
+
+        if ($validated['review_action'] === 'approve') {
+            $workflowService->approve($paymentRequest, $request->user(), $validated['admin_note'] ?? null);
+
+            return redirect()->route('admin.billing.index')->with('success', 'Payment request approved and plan activated.');
+        }
+
+        $workflowService->reject($paymentRequest, $request->user(), $validated['admin_note']);
+
+        return redirect()->route('admin.billing.index')->with('success', 'Payment request rejected.');
     }
 
     private function validatedPlanData(Request $request, ?Plan $plan = null): array

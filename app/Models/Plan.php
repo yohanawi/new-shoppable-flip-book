@@ -40,6 +40,11 @@ class Plan extends Model
         return $this->hasMany(Subscription::class, 'plan_id');
     }
 
+    public function paymentRequests(): HasMany
+    {
+        return $this->hasMany(BillingPaymentRequest::class, 'plan_id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true)->orderBy('sort_order')->orderBy('id');

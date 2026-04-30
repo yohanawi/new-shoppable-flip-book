@@ -4,6 +4,7 @@ namespace Tests\Feature\Catalog;
 
 use App\Models\CatalogPdf;
 use App\Models\CatalogPdfEvent;
+use App\Models\CatalogPdfPage;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
@@ -210,6 +211,110 @@ class CatalogAnalyticsTest extends TestCase
         $this->assertSame(3, $event->page_number);
         $this->assertSame(600000, $event->meta['duration_ms']);
         $this->assertSame('test', $event->meta['source']);
+    }
+
+    public function test_share_route_uses_workflow_specific_viewers(): void
+    {
+        /** @var User $owner */
+        $owner = User::factory()->create([
+            'role' => 'customer',
+        ]);
+
+        $pagePdf = CatalogPdf::create([
+            'user_id' => $owner->id,
+            'title' => 'Managed Catalog',
+            'template_type' => CatalogPdf::TEMPLATE_PAGE_MANAGEMENT,
+            'visibility' => CatalogPdf::VISIBILITY_PUBLIC,
+            'storage_disk' => 'public',
+            'pdf_path' => 'catalog-pdfs/managed-catalog.pdf',
+            'original_filename' => 'managed-catalog.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+        ]);
+
+        CatalogPdfPage::create([
+            'catalog_pdf_id' => $pagePdf->id,
+            'page_number' => 1,
+            'title' => 'Page 1',
+            'display_order' => 1,
+        ]);
+
+        $flipPdf = CatalogPdf::create([
+            'user_id' => $owner->id,
+            'title' => 'Flip Catalog',
+            'template_type' => CatalogPdf::TEMPLATE_FLIP_PHYSICS,
+            'visibility' => CatalogPdf::VISIBILITY_PUBLIC,
+            'storage_disk' => 'public',
+            'pdf_path' => 'catalog-pdfs/flip-catalog.pdf',
+            'original_filename' => 'flip-catalog.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+        ]);
+
+        $slicerPdf = CatalogPdf::create([
+            'user_id' => $owner->id,
+            'title' => 'Slicer Catalog',
+            'template_type' => CatalogPdf::TEMPLATE_SLICER_SHOPPABLE,
+            'visibility' => CatalogPdf::VISIBILITY_PUBLIC,
+            'storage_disk' => 'public',
+            'pdf_path' => 'catalog-pdfs/slicer-catalog.pdf',
+            'original_filename' => 'slicer-catalog.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+        ]);
+
+        $pageResponse = $this->actingAs($owner)->get(route('catalog.pdfs.share', $pagePdf));
+        $pageResponse->assertOk();
+        $pageResponse->assertViewIs('pages.apps.catalog.page-share');
+
+        $flipResponse = $this->actingAs($owner)->get(route('catalog.pdfs.share', $flipPdf));
+        $flipResponse->assertRedirect(route('catalog.pdfs.flip-physics.share', $flipPdf));
+
+        $slicerResponse = $this->actingAs($owner)->get(route('catalog.pdfs.share', $slicerPdf));
+        $slicerResponse->assertRedirect(route('catalog.pdfs.slicer.share', $slicerPdf));
+    }
+
+    public function test_admin_can_track_private_catalog_event(): void
+    {
+        $this->seed([
+            ProjectPermissionsSeeder::class,
+        ]);
+
+        /** @var User $admin */
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+        $admin->assignRole('admin');
+
+        /** @var User $owner */
+        $owner = User::factory()->create([
+            'role' => 'customer',
+        ]);
+
+        $pdf = CatalogPdf::create([
+            'user_id' => $owner->id,
+            'title' => 'Private Catalog',
+            'template_type' => CatalogPdf::TEMPLATE_PAGE_MANAGEMENT,
+            'visibility' => CatalogPdf::VISIBILITY_PRIVATE,
+            'storage_disk' => 'local',
+            'pdf_path' => 'catalog-pdfs/private-catalog.pdf',
+            'original_filename' => 'private-catalog.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson(route('catalog.pdfs.analytics.track', $pdf), [
+                'event_type' => CatalogPdfEvent::EVENT_BOOK_OPEN,
+                'page_number' => 1,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('catalog_pdf_events', [
+            'catalog_pdf_id' => $pdf->id,
+            'user_id' => $admin->id,
+            'event_type' => CatalogPdfEvent::EVENT_BOOK_OPEN,
+        ]);
     }
 
     public function test_admin_can_open_analytics_page(): void

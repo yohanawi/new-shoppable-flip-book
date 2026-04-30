@@ -88,8 +88,11 @@ class CatalogPdfSlicerController extends Controller
     {
         $this->assertSlicer($catalogPdf);
 
-        // For private PDFs, only owner can access
-        if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $catalogPdf->user_id !== Auth::id()) {
+        if (
+            !$this->currentUserIsAdmin()
+            && $catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE
+            && $catalogPdf->user_id !== Auth::id()
+        ) {
             abort(403);
         }
 
@@ -554,13 +557,21 @@ class CatalogPdfSlicerController extends Controller
 
     private function authorizePdfAccess(CatalogPdf $pdf): void
     {
-        if (Auth::user()?->isAdmin()) {
+        if ($this->currentUserIsAdmin()) {
             return;
         }
 
         if ($pdf->user_id !== Auth::id()) {
             abort(403);
         }
+    }
+
+    private function currentUserIsAdmin(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+
+        return $user?->isAdmin() ?? false;
     }
 
     private function authorizeViewer(CatalogPdf $pdf): void

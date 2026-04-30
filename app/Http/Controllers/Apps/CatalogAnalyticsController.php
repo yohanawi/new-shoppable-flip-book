@@ -97,6 +97,10 @@ class CatalogAnalyticsController extends Controller
 
     private function authorizeViewer(CatalogPdf $catalogPdf): void
     {
+        if (Auth::user()?->isAdmin()) {
+            return;
+        }
+
         if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $catalogPdf->user_id !== Auth::id()) {
             abort(403);
         }

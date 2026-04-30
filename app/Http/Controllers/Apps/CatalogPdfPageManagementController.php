@@ -50,7 +50,17 @@ class CatalogPdfPageManagementController extends Controller
     {
         $this->assertPageManagement($catalogPdf);
 
-        // For private PDFs, only owner can access
+        if (Auth::user()?->isAdmin()) {
+            return view('pages.apps.catalog.page-share', [
+                'pdf' => $catalogPdf,
+                'pages' => $catalogPdf->pages()
+                    ->where('is_hidden', false)
+                    ->orderBy('display_order')
+                    ->get(['page_number', 'title', 'display_order']),
+                'pdfUrl' => route('catalog.pdfs.file', $catalogPdf),
+            ]);
+        }
+
         if ($catalogPdf->visibility === CatalogPdf::VISIBILITY_PRIVATE && $catalogPdf->user_id !== Auth::id()) {
             abort(403);
         }

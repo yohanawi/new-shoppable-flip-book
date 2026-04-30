@@ -12,6 +12,7 @@ use App\Http\Controllers\Apps\CatalogPdfFlipPhysicsController;
 use App\Http\Controllers\Apps\CatalogPdfSlicerController;
 use App\Http\Controllers\Billing\AdminBillingController;
 use App\Http\Controllers\Billing\CustomerBillingController;
+use App\Http\Controllers\Billing\CustomerBillingPaymentRequestController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Notifications\AdminNotificationController;
 use App\Http\Controllers\Notifications\NotificationController;
@@ -63,6 +64,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [CustomerBillingController::class, 'index'])
             ->middleware('permission:customer.billing.view')
             ->name('index');
+        Route::get('/plans', [CustomerBillingController::class, 'plans'])
+            ->middleware('permission:customer.plan.manage')
+            ->name('plans');
+        Route::get('/payment-methods', [CustomerBillingController::class, 'paymentMethods'])
+            ->middleware('permission:customer.payment_method.manage')
+            ->name('payment-methods.index');
+        Route::get('/invoices', [CustomerBillingController::class, 'invoices'])
+            ->middleware('permission:customer.payment.view')
+            ->name('invoices.index');
+        Route::get('/payments/history', [CustomerBillingPaymentRequestController::class, 'history'])
+            ->middleware('permission:customer.payment.view')
+            ->name('payments.history');
+        Route::get('/payments/create', [CustomerBillingPaymentRequestController::class, 'create'])
+            ->middleware('permission:customer.plan.manage')
+            ->name('payments.create');
+        Route::post('/payments', [CustomerBillingPaymentRequestController::class, 'store'])
+            ->middleware('permission:customer.plan.manage')
+            ->name('payments.store');
+        Route::get('/payments/{paymentRequest}/receipt', [CustomerBillingPaymentRequestController::class, 'receipt'])
+            ->middleware('permission:customer.payment.view')
+            ->name('payments.receipt');
+        Route::get('/payments/{paymentRequest}', [CustomerBillingPaymentRequestController::class, 'show'])
+            ->middleware('permission:customer.payment.view')
+            ->name('payments.show');
+        Route::post('/payments/{paymentRequest}/resubmit', [CustomerBillingPaymentRequestController::class, 'resubmit'])
+            ->middleware('permission:customer.plan.manage')
+            ->name('payments.resubmit');
         Route::post('/plans/{plan}/subscribe', [CustomerBillingController::class, 'subscribe'])
             ->middleware('permission:customer.plan.manage')
             ->name('subscribe');
@@ -108,6 +136,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/subscriptions/{subscription}/cancel', [AdminBillingController::class, 'cancelSubscription'])
             ->middleware('permission:admin.subscription.manage')
             ->name('subscriptions.cancel');
+        Route::post('/payment-requests/{paymentRequest}/review', [AdminBillingController::class, 'reviewPaymentRequest'])
+            ->middleware('permission:admin.subscription.manage')
+            ->name('payment-requests.review');
     });
 
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -156,8 +187,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::prefix('catalog/pdfs')->name('catalog.pdfs.')->group(function () {
     Route::get('/{catalogPdf}/share', [CatalogPdfController::class, 'share'])->name('share');
     Route::get('/{catalogPdf}/share-preview/assets/{asset}', [CatalogPdfSharePreviewController::class, 'asset'])->name('share-preview.asset');
-    Route::get('/{catalogPdf}/flip-physics/share', [CatalogPdfController::class, 'share'])->name('flip-physics.share');
-    Route::get('/{catalogPdf}/slicer/share', [CatalogPdfController::class, 'share'])->name('slicer.share');
+    Route::get('/{catalogPdf}/flip-physics/share', [CatalogPdfFlipPhysicsController::class, 'share'])->name('flip-physics.share');
+    Route::get('/{catalogPdf}/slicer/share', [CatalogPdfSlicerController::class, 'share'])->name('slicer.share');
     Route::get('/{catalogPdf}/file', [CatalogPdfController::class, 'file'])->name('file');
     Route::get('/{catalogPdf}/download', [CatalogPdfController::class, 'download'])->name('download');
     Route::post('/{catalogPdf}/analytics/track', [CatalogAnalyticsController::class, 'track'])->name('analytics.track');

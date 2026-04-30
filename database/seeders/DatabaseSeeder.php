@@ -19,8 +19,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProjectPermissionsSeeder::class,
             UsersSeeder::class,
-            BillingSeeder::class,
+            // BillingSeeder::class,
         ]);
+
+        // if (app()->environment('local')) {
+        //     $this->call([
+        //         BillingDemoSeeder::class,
+        //     ]);
+        // }
 
         Address::factory(2)->create();
 

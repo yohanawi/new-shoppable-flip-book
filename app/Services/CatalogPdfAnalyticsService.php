@@ -101,6 +101,14 @@ class CatalogPdfAnalyticsService
 
     private function shareUrlForPdf(CatalogPdf $pdf): string
     {
+        if ($pdf->isFlipPhysicsTemplate()) {
+            return route('catalog.pdfs.flip-physics.share', $pdf);
+        }
+
+        if ($pdf->isSlicerTemplate()) {
+            return route('catalog.pdfs.slicer.share', $pdf);
+        }
+
         return route('catalog.pdfs.share', $pdf);
     }
 

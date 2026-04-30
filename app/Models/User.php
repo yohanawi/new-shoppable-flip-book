@@ -99,6 +99,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(BillingTransaction::class, 'user_id')->latest('created_at');
     }
 
+    public function billingPaymentRequests(): HasMany
+    {
+        return $this->hasMany(BillingPaymentRequest::class, 'user_id')->latest('submitted_at')->latest('created_at');
+    }
+
     public function scopeCustomers(Builder $query): Builder
     {
         return $query->where(function (Builder $customerQuery) {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Cashier\Subscription as CashierSubscription;
@@ -39,5 +40,40 @@ class Subscription extends CashierSubscription
     public function transactionRecords(): HasMany
     {
         return $this->hasMany(BillingTransaction::class, 'subscription_id');
+    }
+
+    public function isManualBilling(): bool
+    {
+        return str_starts_with((string) $this->stripe_id, 'manual_payment_request_');
+    }
+
+    public function manualPeriodEnd(): CarbonInterface
+    {
+        $invoice = $this->invoiceRecords()
+            ->whereNotNull('period_end')
+            ->latest('period_end')
+            ->first();
+
+        if ($invoice?->period_end && $invoice->period_end->isFuture()) {
+            return $invoice->period_end->copy();
+        }
+
+        return now();
+    }
+
+    public function cancelManual(): void
+    {
+        $this->forceFill([
+            'ends_at' => $this->manualPeriodEnd(),
+            'stripe_status' => 'active',
+        ])->save();
+    }
+
+    public function resumeManual(): void
+    {
+        $this->forceFill([
+            'ends_at' => null,
+            'stripe_status' => 'active',
+        ])->save();
     }
 }

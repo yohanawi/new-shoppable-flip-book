@@ -5,27 +5,112 @@ namespace App\Services;
 use App\Models\BillingInvoice;
 use App\Models\BillingTransaction;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
+use Stripe\Exception\ApiErrorException;
+use Stripe\StripeClient;
 
 class BillingStripeSyncService
 {
-    public function syncSubscriptionPayload(array $payload): void
+    public function syncSubscriptionPayload(array $payload): ?Subscription
     {
         $user = $this->resolveUser(data_get($payload, 'customer'));
         if (!$user) {
-            return;
+            return null;
         }
 
-        $subscription = $user->subscriptions()->where('stripe_id', data_get($payload, 'id'))->first();
+        $subscriptionId = (string) data_get($payload, 'id');
+        $subscription = $user->subscriptions()->where('stripe_id', $subscriptionId)->first();
+
         if (!$subscription) {
-            return;
+            $subscription = $user->subscriptions()->where('type', 'default')->latest('id')->first();
+        }
+
+        if (!$subscription) {
+            $subscription = new Subscription(['user_id' => $user->id, 'type' => 'default']);
         }
 
         $plan = $this->resolvePlanFromSubscriptionPayload($payload);
-        if ($plan && (int) $subscription->plan_id !== (int) $plan->id) {
-            $subscription->forceFill(['plan_id' => $plan->id])->save();
+
+        $cancelAt = $this->timestamp(data_get($payload, 'cancel_at'));
+        $canceledAt = $this->timestamp(data_get($payload, 'canceled_at'));
+        $endsAt = data_get($payload, 'cancel_at_period_end')
+            ? ($cancelAt ?: $canceledAt)
+            : $canceledAt;
+
+        $subscription->forceFill([
+            'user_id' => $user->id,
+            'type' => $subscription->type ?: 'default',
+            'stripe_id' => $subscriptionId,
+            'stripe_status' => (string) data_get($payload, 'status', 'incomplete'),
+            'stripe_price' => (string) data_get($payload, 'items.data.0.price.id', data_get($payload, 'plan.id', '')),
+            'quantity' => (int) data_get($payload, 'items.data.0.quantity', data_get($payload, 'quantity', 1)),
+            'trial_ends_at' => $this->timestamp(data_get($payload, 'trial_end')),
+            'ends_at' => $endsAt,
+            'plan_id' => $plan?->id,
+        ])->save();
+
+        return $subscription->fresh(['plan']);
+    }
+
+    public function syncCheckoutSession(string $checkoutSessionId, User $user): ?Subscription
+    {
+        if (blank(config('cashier.secret')) || blank($checkoutSessionId)) {
+            return null;
         }
+
+        try {
+            $session = $this->stripeClient()->checkout->sessions->retrieve($checkoutSessionId, [
+                'expand' => [
+                    'subscription',
+                    'subscription.latest_invoice',
+                    'subscription.items.data.price',
+                ],
+            ])->toArray();
+        } catch (ApiErrorException) {
+            return null;
+        }
+
+        $sessionCustomerId = data_get($session, 'customer');
+        if (filled($sessionCustomerId) && filled($user->stripe_id) && $user->stripe_id !== $sessionCustomerId) {
+            return null;
+        }
+
+        if (filled($sessionCustomerId) && $user->stripe_id !== $sessionCustomerId) {
+            $user->forceFill(['stripe_id' => $sessionCustomerId])->save();
+            $user->refresh();
+        }
+
+        $subscriptionPayload = data_get($session, 'subscription');
+        if (!$subscriptionPayload) {
+            return null;
+        }
+
+        if (is_string($subscriptionPayload)) {
+            try {
+                $subscriptionPayload = $this->stripeClient()->subscriptions->retrieve($subscriptionPayload, [
+                    'expand' => [
+                        'latest_invoice',
+                        'items.data.price',
+                    ],
+                ])->toArray();
+            } catch (ApiErrorException) {
+                return null;
+            }
+        }
+
+        $subscription = $this->syncSubscriptionPayload($subscriptionPayload);
+        if (!$subscription) {
+            return null;
+        }
+
+        $invoicePayload = data_get($subscriptionPayload, 'latest_invoice');
+        if (is_array($invoicePayload)) {
+            $this->syncInvoicePayload($invoicePayload);
+        }
+
+        return $subscription;
     }
 
     public function syncInvoicePayload(array $payload, ?string $forcedStatus = null): ?BillingInvoice
@@ -194,5 +279,10 @@ class BillingStripeSyncService
         return is_numeric($value)
             ? Carbon::createFromTimestamp((int) $value)
             : Carbon::parse((string) $value);
+    }
+
+    private function stripeClient(): StripeClient
+    {
+        return new StripeClient((string) config('cashier.secret'));
     }
 }

@@ -14,6 +14,9 @@
     @php($canUploadPdf = $uploadAvailability['allowed'] ?? true)
     @php($uploadLimitMessage = $uploadAvailability['message'] ?? 'You have reached your PDF upload limit for the current plan.')
     @php($canViewAnalytics = (auth()->user()?->isAdmin() ?? false) || ((auth()->user()?->can('customer.analytics.view') ?? false) && app(\App\Services\BillingManager::class)->hasFeature(auth()->user(), 'analytics')))
+    @php($titleUpdateBag = $errors->getBag('catalogTitleUpdate'))
+    @php($propertiesModalPdfId = old('catalog_pdf_id'))
+    @php($propertiesModalTitle = old('title', ''))
 
     <div class="d-flex flex-column gap-8">
         @if (session('success'))
@@ -120,8 +123,7 @@
                             Try clearing one of the filters or use a broader search term. The search checks title, file
                             name, and description.
                         @else
-                            Upload your first PDF and it will appear here with quick actions, a small preview, and
-                            direct workflow access.
+                            Upload your first PDF and it will appear here with quick actions, a small preview, and direct workflow access.
                         @endif
                     </div>
                     <div class="d-flex justify-content-center flex-wrap gap-3">
@@ -147,11 +149,12 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-3">
-                    <span class="badge badge-light-primary fs-8 px-4 py-3">{{ number_format($pdfs->count()) }} on this
-                        page</span>
-                    <span class="badge badge-light-dark fs-8 px-4 py-3">Sort:
-                        {{ $sortOptions[$filters['sort'] ?? 'latest'] ?? 'Newest first' }}</span>
-
+                    <span class="badge badge-light-primary fs-8 px-4 py-3">
+                        {{ number_format($pdfs->count()) }} on this page
+                    </span>
+                    <span class="badge badge-light-dark fs-8 px-4 py-3">
+                        Sort: {{ $sortOptions[$filters['sort'] ?? 'latest'] ?? 'Newest first' }}
+                    </span>
 
                     <a href="{{ $canUploadPdf ? route('catalog.pdfs.create') : '#' }}"
                         class="btn btn-warning btn-xs fw-bold{{ $canUploadPdf ? '' : ' disabled' }}"
@@ -176,6 +179,7 @@
                     @php($previewStudioUrl = route('catalog.pdfs.share-preview.edit', $pdf))
 
                     <div class="col-md-6 col-xl-4 col-xxl-3">
+
                         <div class="card card-flush h-100 shadow-sm">
                             <div class="card-body p-5 p-lg-6 d-flex flex-column">
                                 <div class="d-flex align-items-start justify-content-between mb-3">
@@ -183,8 +187,7 @@
                                         <span class="badge badge-light-info fs-8">
                                             {{ $templateTypeOptions[$pdf->template_type] ?? $pdf->template_type }}
                                         </span>
-                                        <span
-                                            class="badge badge-light-{{ $pdf->visibility === \App\Models\CatalogPdf::VISIBILITY_PUBLIC ? 'success' : 'warning' }} text-capitalize fs-8">
+                                        <span class="badge badge-light-{{ $pdf->visibility === \App\Models\CatalogPdf::VISIBILITY_PUBLIC ? 'success' : 'warning' }} text-capitalize fs-8">
                                             {{ $pdf->visibility }}
                                         </span>
                                     </div>
@@ -205,6 +208,21 @@
                                                     </span>
                                                     <span class="menu-title">Edit</span>
                                                 </a>
+                                            </div>
+
+                                            <div class="menu-item px-3">
+                                                <button type="button"
+                                                    class="menu-link px-3 border-0 bg-transparent w-100 text-start"
+                                                    data-bs-toggle="modal" data-bs-target="#catalogPdfPropertiesModal"
+                                                    data-properties-action="{{ route('catalog.pdfs.update', $pdf) }}"
+                                                    data-properties-pdf-id="{{ $pdf->id }}"
+                                                    data-properties-title="{{ $pdf->title }}"
+                                                    data-properties-filename="{{ $pdf->original_filename ?: 'Uploaded PDF' }}">
+                                                    <span class="menu-icon">
+                                                        <i class="ki-outline ki-gear fs-3"></i>
+                                                    </span>
+                                                    <span class="menu-title">Properties</span>
+                                                </button>
                                             </div>
 
                                             <div class="menu-item px-3">
@@ -338,6 +356,7 @@
                                 @endif
                             </div>
                         </div>
+
                     </div>
                 @endforeach
             </div>
@@ -348,11 +367,74 @@
         @endif
     </div>
 
+    <div class="modal fade" id="catalogPdfPropertiesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-sm border-0">
+                <form method="POST" id="catalogPdfPropertiesForm">
+                    @csrf
+                    @method('PATCH')
+
+                    <div class="modal-header border-0 pb-0 px-8 pt-8">
+                        <div>
+                            <h3 class="fw-bold text-gray-900 mb-1">Catalog PDF properties</h3>
+                            <div class="text-muted fs-7">Update the title shown across the catalog workspace and share
+                                flows.</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-icon btn-active-light-primary"
+                            data-bs-dismiss="modal" aria-label="Close">
+                            <i class="ki-outline ki-cross fs-2"></i>
+                        </button>
+                    </div>
+
+                    <div class="modal-body px-8 py-7">
+                        <input type="hidden" name="catalog_pdf_id" id="catalogPdfPropertiesId"
+                            value="{{ $propertiesModalPdfId }}">
+
+                        <div class="rounded-3 bg-light-primary border border-primary border-dashed px-4 py-3 mb-6">
+                            <div class="fw-bold text-gray-900 fs-7 mb-1" id="catalogPdfPropertiesFileName">Select a
+                                PDF</div>
+                            <div class="text-muted fs-8">Only the title changes here. The PDF file and workflow stay
+                                the same.</div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="catalogPdfPropertiesTitle"
+                                class="form-label fw-bold text-gray-900 required">PDF title</label>
+                            <input type="text" name="title" id="catalogPdfPropertiesTitle"
+                                value="{{ $propertiesModalTitle }}"
+                                class="form-control form-control-lg form-control-solid{{ $titleUpdateBag->has('title') ? ' is-invalid' : '' }}"
+                                placeholder="Example: Spring Collection Catalog" required maxlength="255">
+                            @if ($titleUpdateBag->has('title'))
+                                <div class="invalid-feedback">{{ $titleUpdateBag->first('title') }}</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 px-8 pb-8 pt-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ki-outline ki-check fs-3 me-2"></i>
+                            Save title
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             (function() {
                 const defaultMessage = @json($uploadLimitMessage);
                 const billingError = @json($errors->first('billing'));
+                const propertiesModalId = 'catalogPdfPropertiesModal';
+                const propertiesModalElement = document.getElementById(propertiesModalId);
+                const propertiesForm = document.getElementById('catalogPdfPropertiesForm');
+                const propertiesIdInput = document.getElementById('catalogPdfPropertiesId');
+                const propertiesTitleInput = document.getElementById('catalogPdfPropertiesTitle');
+                const propertiesFileName = document.getElementById('catalogPdfPropertiesFileName');
+                const hasPropertiesErrors = @json($titleUpdateBag->any());
+                const previousPropertiesPdfId = @json($propertiesModalPdfId);
 
                 function showAlert(options) {
                     if (window.Swal && typeof window.Swal.fire === 'function') {
@@ -419,6 +501,36 @@
                         });
                     });
                 });
+
+                document.querySelectorAll('[data-properties-action]').forEach((button) => {
+                    button.addEventListener('click', () => {
+                        if (!propertiesForm || !propertiesTitleInput || !propertiesFileName || !
+                            propertiesIdInput) {
+                            return;
+                        }
+
+                        propertiesForm.action = button.dataset.propertiesAction;
+                        propertiesIdInput.value = button.dataset.propertiesPdfId || '';
+                        propertiesTitleInput.value = button.dataset.propertiesTitle || '';
+                        propertiesFileName.textContent = button.dataset.propertiesFilename ||
+                            'Uploaded PDF';
+                    });
+                });
+
+                if (hasPropertiesErrors && propertiesModalElement && propertiesForm) {
+                    const fallbackTrigger = document.querySelector(
+                        `[data-properties-pdf-id="${previousPropertiesPdfId}"]`
+                    );
+
+                    if (fallbackTrigger) {
+                        propertiesForm.action = fallbackTrigger.dataset.propertiesAction;
+                        propertiesFileName.textContent = fallbackTrigger.dataset.propertiesFilename || 'Uploaded PDF';
+                    }
+
+                    if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+                        window.bootstrap.Modal.getOrCreateInstance(propertiesModalElement).show();
+                    }
+                }
 
                 if (billingError) {
                     showAlert({

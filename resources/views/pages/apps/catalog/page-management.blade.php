@@ -20,7 +20,7 @@
     @endphp
 
     <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center mb-8">
-        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light border">
+        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-dark border">
             <i class="ki-outline ki-arrow-left fs-2"></i> Back
         </a>
         <div class="d-flex flex-wrap gap-3">
@@ -121,7 +121,8 @@
                             <button type="button" class="btn btn-primary" id="btnInitPages">Initialize Pages</button>
                         </form>
                     @else
-                        <form action="{{ route('catalog.pdfs.manage.update', $pdf) }}" method="POST">
+                        <form action="{{ route('catalog.pdfs.manage.update', $pdf) }}" method="POST"
+                            id="pageManagementForm">
                             @csrf
 
                             @if ($errors->any())
@@ -185,8 +186,8 @@
                                                     <div class="mt-2 row-status"></div>
                                                 </td>
                                                 <td>
-                                                    <input type="hidden"
-                                                        name="pages[{{ $page->id }}][is_hidden]" value="0">
+                                                    <input type="hidden" name="pages[{{ $page->id }}][is_hidden]"
+                                                        value="0">
                                                     <div class="form-check form-switch">
                                                         <input class="form-check-input hidden-checkbox"
                                                             type="checkbox"
@@ -278,11 +279,22 @@
             <script>
                 (function() {
                     const tableBody = document.getElementById('page-management-table');
-                    if (!tableBody) {
+                    const form = document.getElementById('pageManagementForm');
+                    if (!tableBody || !form) {
                         return;
                     }
 
                     let draggedRow = null;
+                    let initialFormState = '';
+
+                    const serializeFormState = () => new URLSearchParams(new FormData(form)).toString();
+
+                    const unsavedChangesGuard = typeof window.createUnsavedChangesGuard === 'function' ?
+                        window.createUnsavedChangesGuard({
+                            isDirty: function() {
+                                return initialFormState !== '' && serializeFormState() !== initialFormState;
+                            }
+                        }) : null;
 
                     const getRows = () => Array.from(tableBody.querySelectorAll('[data-page-row]'));
 
@@ -494,6 +506,12 @@
                     });
 
                     syncOrderInputs();
+
+                    initialFormState = serializeFormState();
+
+                    form.addEventListener('submit', () => {
+                        unsavedChangesGuard?.allowNextNavigation();
+                    });
                 })();
             </script>
         @endpush

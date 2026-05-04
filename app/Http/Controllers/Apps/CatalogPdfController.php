@@ -199,6 +199,22 @@ class CatalogPdfController extends Controller
         ]);
     }
 
+    public function update(Request $request, CatalogPdf $catalogPdf)
+    {
+        $this->authorizeManagementAccess($catalogPdf);
+
+        $validated = $request->validateWithBag('catalogTitleUpdate', [
+            'title' => ['required', 'string', 'max:255'],
+        ]);
+
+        $catalogPdf->title = $validated['title'];
+        $catalogPdf->save();
+
+        return redirect()
+            ->route('catalog.pdfs.index')
+            ->with('success', 'PDF title updated successfully.');
+    }
+
     public function share(CatalogPdf $catalogPdf)
     {
         if ($catalogPdf->isFlipPhysicsTemplate()) {

@@ -192,49 +192,67 @@
 
     <!-- Product Modal -->
     <div class="modal fade" id="modalProduct" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered mw-700px">
-            <div class="modal-content shadow-lg" style="border-radius: 20px; border: none; overflow: hidden;">
-                <!-- Gradient Header -->
-                <div class="modal-header border-0 pb-0"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px;">
-                    <h2 class="fw-bold text-white mb-0" id="modalProductTitle"
-                        style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);"> Details</h2>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+            <div class="modal-content rounded-4 border-0 shadow-sm overflow-hidden">
+                <div class="modal-header border-0 pb-0 px-6 px-lg-8 pt-6 pt-lg-8">
+                    <div class="d-flex align-items-center justify-content-between gap-4 w-100">
+                        <div class="min-w-0">
+                            <h2 class="fw-bolder text-dark mb-0 fs-5" id="modalProductTitle">Product Details</h2>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-icon btn-active-color-primary"
+                            data-bs-dismiss="modal" aria-label="Close">
+                            <i class="bi bi-x-lg fs-5"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="modal-body pt-6 pb-8 px-10">
-                    <div class="d-flex align-items-start gap-5 flex-column flex-md-row">
-                        <!-- Product Image with Frame -->
-                        <div class="flex-shrink-0 position-relative" id="modalProductThumbWrapper"
-                            style="display:none;">
-                            <div
-                                style="width: 180px; height: 180px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 16px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
-                                <img id="modalProductThumb" src="" alt=""
-                                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+
+                <div class="modal-body px-6 px-lg-8 py-6">
+                    <div class="row g-6 align-items-stretch">
+                        <div class="col-12 col-lg-4 d-none" id="modalProductThumbWrapper">
+                            <div class="card card-flush border-0 bg-light-primary h-100 shadow-sm">
+                                <div class="card-body p-4">
+                                    <img id="modalProductThumb" src="" alt=""
+                                        class="img-fluid rounded-3 w-100 h-250px h-lg-300px object-fit-cover">
+                                </div>
                             </div>
                         </div>
-                        <!-- Product Info -->
-                        <div class="flex-grow-1">
-                            <div class="fs-2 fw-bold mb-3" id="modalProductName"
-                                style="color: #2d3748; line-height: 1.3;"></div>
-                            <div class="fs-6 mb-5" id="modalProductDesc" style="color: #718096; line-height: 1.6;">
-                            </div>
-                            <div class="d-flex align-items-center mb-4">
-                                <div class="badge"
-                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1.5rem; padding: 10px 20px; border-radius: 10px; font-weight: 700;"
-                                    id="modalProductPrice"></div>
+
+                        <div class="col-12 col-lg-8">
+                            <div class="card border-0 bg-light h-100 shadow-sm">
+                                <div class="card-body p-5 p-lg-7 d-flex flex-column gap-5">
+                                    <div class="d-flex flex-column gap-3">
+                                        <h3 class="text-dark fw-bolder mb-0 fs-2" id="modalProductName"></h3>
+                                        <p class="text-muted fs-6 mb-0" id="modalProductDesc">
+                                            Product details will appear here when available.
+                                        </p>
+                                    </div>
+
+                                    <div class="card border-0 mt-auto d-none" id="modalProductPriceRow">
+                                        <div
+                                            class="card-body p-4 d-flex align-items-center justify-content-between gap-4 flex-wrap">
+                                            <div>
+                                                <div
+                                                    class="text-black text-opacity-75 text-uppercase fw-bolder fs-8 mb-1">
+                                                    Price</div>
+                                                <div class="text-black fw-bolder fs-2" id="modalProductPrice"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- Enhanced Footer -->
-                <div class="modal-footer border-0 pt-0 justify-content-center pb-8"
-                    style="background: linear-gradient(to bottom, transparent 0%, #f7fafc 100%);">
-                    <a href="#" target="_blank" class="btn px-12 py-3 fw-bold" id="modalProductLink"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: all 0.3s ease;">
-                        <i class="bi bi-cart3 me-2"></i> View Product
+
+                <div class="modal-footer border-0 bg-transparent px-6 px-lg-8 pb-6 pt-0 justify-content-end gap-3">
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary d-none"
+                        id="modalProductLink">
+                        <i class="bi bi-bag-check me-2"></i>
+                        View Product
                     </a>
-                    <button type="button" class="btn btn-light px-12 py-3 fw-bold" data-bs-dismiss="modal"
-                        style="border-radius: 12px; border: 2px solid #e2e8f0;">Close</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
@@ -446,10 +464,32 @@
                 return Number(pages[turnPage - 1]?.page_number || pages[0]?.page_number || 1);
             });
             const flipSoundUrl = @json(asset('assets/media/sounds/page-flip-new.mp3'));
+            const modalProductEl = document.getElementById('modalProduct');
+            const modalProductTitleEl = document.getElementById('modalProductTitle');
+            const modalProductNameEl = document.getElementById('modalProductName');
+            const modalProductDescEl = document.getElementById('modalProductDesc');
+            const modalProductPriceEl = document.getElementById('modalProductPrice');
+            const modalProductPriceRowEl = document.getElementById('modalProductPriceRow');
+            const modalProductLinkEl = document.getElementById('modalProductLink');
+            const modalProductThumbWrapperEl = document.getElementById('modalProductThumbWrapper');
+            const modalProductThumbEl = document.getElementById('modalProductThumb');
             const modalVideoEl = document.getElementById('modalVideo');
             const modalVideoWrapEl = document.getElementById('modalVideoWrap');
             let flipSound = null;
             let lastTurnedPage = 1;
+
+            function resetProductModal() {
+                modalProductTitleEl.textContent = 'Product Details';
+                modalProductNameEl.textContent = '';
+                modalProductDescEl.textContent = 'Product details will appear here when available.';
+                modalProductPriceEl.textContent = '';
+                modalProductPriceRowEl.classList.add('d-none');
+                modalProductLinkEl.href = '#';
+                modalProductLinkEl.classList.add('d-none');
+                modalProductThumbEl.removeAttribute('src');
+                modalProductThumbEl.alt = '';
+                modalProductThumbWrapperEl.classList.add('d-none');
+            }
 
             function createFlipSound() {
                 try {
@@ -652,6 +692,7 @@
             }
 
             modalVideoEl?.addEventListener('hide.bs.modal', stopModalVideoPlayback);
+            modalProductEl?.addEventListener('hidden.bs.modal', resetProductModal);
 
             function handleAction(h) {
                 if (h.action_type === 'internal_page') {
@@ -666,18 +707,31 @@
                 }
 
                 if (h.action_type === 'popup_window') {
-                    document.getElementById('modalProductTitle').textContent = h.title ||
-                        'Product';
-                    document.getElementById('modalProductName').textContent = h.title || '';
-                    document.getElementById('modalProductDesc').textContent = h.description || '';
-                    document.getElementById('modalProductPrice').textContent = h.price || '';
-                    document.getElementById('modalProductLink').href = h.link || '#';
+                    resetProductModal();
+
+                    const title = String(h.title || '').trim();
+                    const description = String(h.description || '').trim();
+                    const price = String(h.price || '').trim();
+                    const link = String(h.link || '').trim();
+
+                    modalProductTitleEl.textContent = title || 'Product Details';
+                    modalProductNameEl.textContent = title || 'Catalog Product';
+                    modalProductDescEl.textContent = description || 'Product details will appear here when available.';
+
+                    if (price) {
+                        modalProductPriceEl.textContent = price;
+                        modalProductPriceRowEl.classList.remove('d-none');
+                    }
+
+                    if (link) {
+                        modalProductLinkEl.href = link;
+                        modalProductLinkEl.classList.remove('d-none');
+                    }
 
                     if (h.thumbnail_path) {
-                        document.getElementById('modalProductThumbWrapper').style.display = 'block';
-                        document.getElementById('modalProductThumb').src = mediaUrl(h.id, 'thumbnail');
-                    } else {
-                        document.getElementById('modalProductThumbWrapper').style.display = 'none';
+                        modalProductThumbEl.src = mediaUrl(h.id, 'thumbnail');
+                        modalProductThumbEl.alt = title || 'Product thumbnail';
+                        modalProductThumbWrapperEl.classList.remove('d-none');
                     }
 
                     showModal('modalProduct');

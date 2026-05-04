@@ -8,17 +8,14 @@
         {{ Breadcrumbs::render('catalog.pdfs.slicer.edit', $pdf) }}
     @endsection
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5">
-        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light border">
+    <div class="d-flex flex-wrap justify-content-end align-items-center mb-5 gap-5">
+        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-dark border">
             <i class="ki-outline ki-arrow-left fs-2"></i> Back
         </a>
         <div class="d-flex flex-wrap gap-3">
-            <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}" class="btn btn-light-primary">Shoppable
-                Preview</a>
-            {{-- <form method="POST" action="{{ route('catalog.pdfs.slicer.generate-images', $pdf) }}">
-                @csrf
-                <button type="submit" class="btn btn-light-success">Generate Page Images</button>
-            </form> --}}
+            <a href="{{ route('catalog.pdfs.slicer.preview', $pdf) }}" class="btn btn-light-primary">
+                Shoppable Preview
+            </a>
         </div>
     </div>
 
@@ -55,6 +52,7 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-2 flex-wrap">
+
                             <span class="text-muted fw-semibold">Tool</span>
                             <button type="button" class="btn btn-sm btn-light" data-tool="select"
                                 id="toolSelect">Select</button>
@@ -65,6 +63,7 @@
                             <button type="button" class="btn btn-sm btn-light" data-tool="free"
                                 id="toolFree">Free</button> --}}
                             <div class="vr"></div>
+
                             <div class="d-none align-items-center gap-2" id="draftActionBar">
                                 <span class="text-muted fw-semibold">Draft</span>
                                 <button type="button" class="btn btn-sm btn-light-danger" id="btnDraftCancel">
@@ -75,10 +74,10 @@
                                 </button>
                                 <div class="vr"></div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-light" id="btnClear">Clear Selection</button>
+                            {{-- <button type="button" class="btn btn-sm btn-light" id="btnClear">Clear Selection</button>
                             <button type="button" class="btn btn-sm btn-light" id="btnDeleteSelected">
                                 Delete Selected
-                            </button>
+                            </button> --}}
                         </div>
                     </div>
                 </div>
@@ -141,8 +140,9 @@
                     <div class="mh-300px overflow-auto">
                         <div class="list-group" id="hotspotList"></div>
                     </div>
-                    <div class="text-muted mt-3">Click a hotspot to edit. Use Delete Selected to remove from canvas,
-                        then save.</div>
+                    <div class="text-muted mt-3">
+                        Click a hotspot to edit. Use Delete Selected to remove from canvas, then save.
+                    </div>
                 </div>
             </div>
         </div>
@@ -340,6 +340,7 @@
                 let pdfDoc = null;
                 let pendingDraftObject = null;
                 let draftConfirmationRequired = false;
+                let hotspotBaselineState = '';
                 const transparentHotspotColor = 'rgba(0, 0, 0, 0)';
 
                 const neutralHotspotFillColor = 'rgba(255, 255, 255, 0.08)';
@@ -369,6 +370,54 @@
 
                     hotspotModal.show();
                 }
+
+                function serializeHotspotState() {
+                    return JSON.stringify({
+                        hotspotId: hotspotIdEl?.value || '',
+                        shapeType: shapeTypeEl?.value || '',
+                        shapeData: shapeDataEl?.value || '',
+                        bboxX: bboxXEl?.value || '',
+                        bboxY: bboxYEl?.value || '',
+                        bboxW: bboxWEl?.value || '',
+                        bboxH: bboxHEl?.value || '',
+                        actionType: actionTypeEl?.value || '',
+                        isActive: document.getElementById('isActive')?.checked || false,
+                        title: document.getElementById('title')?.value || '',
+                        color: colorInput?.value || '',
+                        link: document.getElementById('link')?.value || '',
+                        internalPage: document.getElementById('internalPage')?.value || '',
+                        description: document.getElementById('description')?.value || '',
+                        price: document.getElementById('price')?.value || '',
+                        popupVideoUrl: popupVideoUrlEl?.value || '',
+                        thumbnailFile: thumbnailInput?.files?.[0]?.name || '',
+                        popupImageFile: popupImageInput?.files?.[0]?.name || '',
+                        popupVideoFile: popupVideoInput?.files?.[0]?.name || '',
+                    });
+                }
+
+                function captureHotspotBaseline() {
+                    hotspotBaselineState = serializeHotspotState();
+                }
+
+                function hasPendingDraftChanges() {
+                    return (canvasHasObject(pendingDraftObject) && isDraftHotspotObject(pendingDraftObject)) ||
+                        (canvasHasObject(currentObject) && isDraftHotspotObject(currentObject));
+                }
+
+                function hasUnsavedHotspotChanges() {
+                    if (hotspotBaselineState === '') {
+                        return false;
+                    }
+
+                    return serializeHotspotState() !== hotspotBaselineState;
+                }
+
+                const unsavedChangesGuard = typeof window.createUnsavedChangesGuard === 'function' ?
+                    window.createUnsavedChangesGuard({
+                        isDirty: function() {
+                            return hasPendingDraftChanges() || hasUnsavedHotspotChanges();
+                        }
+                    }) : null;
 
                 function setStatus(text, tone = 'muted') {
                     saveStatus.textContent = text;
@@ -819,6 +868,7 @@
                     clearPendingDraft();
                     await deleteCanvasObject(draftObject);
                     resetHotspotFormFields();
+                    captureHotspotBaseline();
                     setStatus('Drawing removed.');
                 }
 
@@ -840,6 +890,7 @@
                     resetShapeFields();
 
                     if (!hotspotId) {
+                        captureHotspotBaseline();
                         setStatus('Selection removed.');
                         return;
                     }
@@ -860,6 +911,7 @@
                     }
 
                     hotspotIdEl.value = '';
+                    resetHotspotFormFields();
                     updateCurrentMedia();
                     clearFileInputs();
                     setFormMode(false);
@@ -867,6 +919,7 @@
                     setStatus('Deleted.', 'success');
                     await loadHotspots();
                     await renderThumbnailPreview();
+                    captureHotspotBaseline();
                 }
 
                 async function deleteHotspotFromModal() {
@@ -876,27 +929,10 @@
                         return;
                     }
 
-                    let confirmed = false;
-
-                    if (window.Swal && typeof window.Swal.fire === 'function') {
-                        const result = await window.Swal.fire({
-                            text: 'Delete this hotspot? This action cannot be undone.',
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Yes, delete it',
-                            cancelButtonText: 'Cancel',
-                            buttonsStyling: false,
-                            focusCancel: true,
-                            customClass: {
-                                confirmButton: 'btn btn-danger',
-                                cancelButton: 'btn btn-light'
-                            }
-                        });
-
-                        confirmed = !!result.isConfirmed;
-                    } else {
-                        confirmed = window.confirm('Delete this hotspot? This action cannot be undone.');
-                    }
+                    const confirmed = await window.showDeleteConfirmation({
+                        title: 'Delete Hotspot?',
+                        text: 'This action is permanent and cannot be undone.'
+                    });
 
                     if (!confirmed) {
                         return;
@@ -1217,6 +1253,7 @@
                     setActiveHotspotListItem(h.id);
                     setFormMode(true);
                     openHotspotModal('edit');
+                    captureHotspotBaseline();
                 }
 
                 function getScaledHotspotData(hotspot) {
@@ -1745,6 +1782,7 @@
                     await loadBackgroundForPage();
                     await loadHotspots();
                     await renderThumbnailPreview();
+                    captureHotspotBaseline();
                 }
 
                 function resetFormForNew() {
@@ -1753,6 +1791,7 @@
                         preserveCanvasObjects: true,
                         clearHotspotId: true
                     });
+                    captureHotspotBaseline();
                     setStatus('');
                 }
 

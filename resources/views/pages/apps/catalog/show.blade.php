@@ -21,7 +21,7 @@
     @endif
 
     <div class="d-flex flex-wrap gap-3 mb-8 justify-content-between">
-        <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-light border">
+        <a href="{{ route('catalog.pdfs.index') }}" class="btn btn-dark border">
             <i class="ki-outline ki-arrow-left fs-2"></i> Back
         </a>
         <div class="d-flex align-items-center gap-3">
@@ -31,24 +31,18 @@
             <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-primary">
                 Download PDF
             </a>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                Delete PDF
-            </button>
+            <form action="{{ route('catalog.pdfs.delete', $pdf) }}" method="POST" class="m-0"
+                data-delete-swal-title="Delete Catalog?"
+                data-delete-swal-text="This action is permanent and cannot be undone.">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">Delete PDF</button>
+            </form>
         </div>
     </div>
 
     <div class="row g-8">
         <div class="col-xl-8">
-            @if ($pdf->isUploadedTemplate())
-                <div class="alert alert-primary d-flex align-items-start gap-3 mb-8">
-                    <i class="ki-outline ki-abstract-26 fs-2 text-primary mt-1"></i>
-                    <div>
-                        <div class="fw-bold mb-1">Use all functions on this PDF</div>
-                        <div>Open any tool below. They all work on the same uploaded file.</div>
-                    </div>
-                </div>
-            @endif
-
             <div class="card border-0 shadow-sm">
                 <div class="card-header border-0 pt-8">
                     <div class="card-title flex-column align-items-start">
@@ -58,7 +52,7 @@
                     </div>
                 </div>
                 <div class="card-body pt-0">
-                    <div class="rounded-4 overflow-hidden border" style="height: 70vh;">
+                    <div class="rounded-4 overflow-hidden border" style="height: 85vh;">
                         <iframe src="{{ route('catalog.pdfs.file', $pdf) }}"
                             style="border: 0; width: 100%; height: 100%;" title="{{ $pdf->title }}"></iframe>
                     </div>
@@ -213,34 +207,7 @@
                             onclick="copyToClipboard('{{ route('catalog.pdfs.show', $pdf) }}')">
                             Copy manage link
                         </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header border-0 pb-0">
-                    <h2 class="fw-bold text-danger mb-0">Delete PDF?</h2>
-                    <button type="button" class="btn btn-sm btn-icon btn-active-color-primary"
-                        data-bs-dismiss="modal">
-                        <i class="ki-outline ki-cross fs-1"></i>
-                    </button>
-                </div>
-                <div class="modal-body pt-5 pb-8 text-center">
-                    <i class="ki-outline ki-trash fs-5x text-danger mb-5"></i>
-                    <div class="text-gray-700 fs-6 mb-6">
-                        Delete <strong>{{ $pdf->title }}</strong>? This action cannot be undone.
-                    </div>
-                    <div class="d-flex justify-content-center gap-3">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <form action="{{ route('catalog.pdfs.delete', $pdf) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Delete PDF</button>
-                        </form>
                     </div>
                 </div>
             </div>

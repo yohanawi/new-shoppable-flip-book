@@ -396,7 +396,10 @@
             .share-brand-badge {
                 max-width: calc(100% - 24px);
             }
+
         }
+
+        @media (max-width: 767.98px) {}
     </style>
 </head>
 
@@ -465,31 +468,77 @@
     </div>
 
     <div class="modal fade" id="modalProduct" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered mw-700px">
-            <div class="modal-content shadow-lg">
-                <div class="modal-header border-0 pb-0">
-                    <h2 class="fw-bold mb-0" id="modalProductTitle">Details</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body pt-6 pb-8 px-10">
-                    <div class="d-flex align-items-start gap-5 flex-column flex-md-row">
-                        <div class="flex-shrink-0" id="modalProductThumbWrapper" style="display:none;">
-                            <img id="modalProductThumb" src="" alt="" class="rounded-3"
-                                style="width: 180px; height: 180px; object-fit: cover;">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+                <div class="modal-header border-0 bg-dark bg-gradient text-white px-4 px-lg-5 py-3 position-relative">
+                    <div class="w-100 pe-5">
+                        <div class="d-flex align-items-center gap-3">
+                            <div
+                                class="bg-white text-dark d-inline-flex align-items-center justify-content-center shadow-sm p-3 flex-shrink-0 rounded-4">
+                                <i class="bi bi-bag-heart fs-4"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h2 class="h2 mb-1 fw-bold text-white" id="modalProductTitle">Product Details</h2>
+                                <p class="mb-0 text-white-50">Discover featured product details inside this interactive
+                                    catalog.</p>
+                            </div>
                         </div>
-                        <div class="flex-grow-1">
-                            <div class="fs-2 fw-bold mb-3" id="modalProductName"></div>
-                            <div class="fs-6 mb-5" id="modalProductDesc"></div>
-                            <div class="fs-2 fw-bold text-primary" id="modalProductPrice"></div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 mt-4 me-4"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light px-4 px-lg-5 py-4 py-lg-5">
+                    <div class="row g-4 align-items-stretch">
+                        <div class="col-12 col-lg-4 d-none" id="modalProductThumbWrapper">
+                            <div class="card border-0 h-100 overflow-hidden rounded-4 bg-white">
+                                <div class="card-body p-0 h-100 d-flex align-items-stretch justify-content-center">
+                                    <img id="modalProductThumb" src="" alt=""
+                                        class="img-fluid rounded-4 w-100 h-100 object-fit-cover">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-12" id="modalProductInfoColumn">
+                            <div class="card border-0 h-100 rounded-4 bg-white">
+                                <div class="card-body p-4 p-lg-5 d-flex flex-column gap-4">
+                                    <div>
+                                        <div class="text-uppercase text-primary fw-semibold small mb-2">Product overview
+                                        </div>
+                                        <h3 class="display-6 fw-bold text-dark mb-3" id="modalProductName"></h3>
+                                        <p class="text-secondary lh-lg mb-0" id="modalProductDesc">
+                                            Product details will appear here when available.
+                                        </p>
+                                    </div>
+                                    <div id="modalProductPriceRow" class="d-none px-0">
+                                        <div class="d-flex align-items-center gap-4 py-3 px-4 flex-wrap justify-content-start"
+                                            style="backdrop-filter: blur(8px); background: rgba(30, 34, 90, 0.18); border-radius: 2rem; box-shadow: 0 2px 24px 0 rgba(30,34,90,0.10);">
+                                            <div class="d-flex align-items-center justify-content-center me-2"
+                                                style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #fff 60%, #e9e9f7 100%); box-shadow: 0 2px 8px 0 rgba(30,34,90,0.10);">
+                                                <i class="bi bi-tag fs-3 text-primary"></i>
+                                            </div>
+                                            <div class="flex-grow-1 min-w-0">
+                                                <div
+                                                    class="text-uppercase fw-semibold small mb-1 text-primary opacity-75">
+                                                    Price</div>
+                                                <div class="fs-2 fw-bold mb-0 text-dark" id="modalProductPrice"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 justify-content-center pb-8">
-                    <a href="#" target="_blank" class="btn btn-primary px-12 py-3 fw-bold" id="modalProductLink">
-                        <i class="bi bi-cart3 me-2"></i> View Product
-                    </a>
-                    <button type="button" class="btn btn-light px-12 py-3 fw-bold"
-                        data-bs-dismiss="modal">Close</button>
+                <div class="modal-footer border-0 bg-white px-4 px-lg-5 pb-4 pb-lg-5 pt-0">
+                    <div class="d-flex flex-column flex-md-row justify-content-end align-items-md-center gap-3 w-100">
+                        <div class="d-flex flex-column flex-sm-row justify-content-sm-end align-items-stretch gap-2">
+                            <a href="#" target="_blank" rel="noopener noreferrer"
+                                class="btn btn-primary d-none" id="modalProductLink">
+                                <i class="bi bi-cart3 me-2"></i> View Product
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -546,6 +595,16 @@
             const pageInfoEl = document.getElementById('pageInfo');
             const loadingMessageEl = document.getElementById('loadingMessage');
             const bookFrameEl = document.querySelector('.share-book-frame');
+            const modalProductEl = document.getElementById('modalProduct');
+            const modalProductTitleEl = document.getElementById('modalProductTitle');
+            const modalProductNameEl = document.getElementById('modalProductName');
+            const modalProductDescEl = document.getElementById('modalProductDesc');
+            const modalProductPriceEl = document.getElementById('modalProductPrice');
+            const modalProductPriceRowEl = document.getElementById('modalProductPriceRow');
+            const modalProductThumbWrapperEl = document.getElementById('modalProductThumbWrapper');
+            const modalProductInfoColumnEl = document.getElementById('modalProductInfoColumn');
+            const modalProductThumbEl = document.getElementById('modalProductThumb');
+            const modalProductLinkEl = document.getElementById('modalProductLink');
             const mediaBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/hotspots'));
             const pageImageBase = @json(url('/catalog/pdfs/' . $pdf->id . '/slicer/pages'));
 
@@ -558,6 +617,23 @@
                 const pageId = String(hotspot.catalog_pdf_page_id);
                 hotspotByPageId[pageId] = hotspotByPageId[pageId] || [];
                 hotspotByPageId[pageId].push(hotspot);
+            }
+
+            modalProductEl?.addEventListener('hidden.bs.modal', resetProductModal);
+
+            function resetProductModal() {
+                modalProductTitleEl.textContent = 'Product Details';
+                modalProductNameEl.textContent = '';
+                modalProductDescEl.textContent = 'Product details will appear here when available.';
+                modalProductPriceEl.textContent = '';
+                modalProductPriceRowEl.classList.add('d-none');
+                modalProductLinkEl.href = '#';
+                modalProductLinkEl.classList.add('d-none');
+                modalProductThumbEl.removeAttribute('src');
+                modalProductThumbEl.alt = '';
+                modalProductThumbWrapperEl.classList.add('d-none');
+                modalProductInfoColumnEl.classList.remove('col-lg-8');
+                modalProductInfoColumnEl.classList.add('col-lg-12');
             }
 
             function sendAnalytics(eventType, payload = {}, keepalive = false) {
@@ -691,22 +767,33 @@
                 }
 
                 if (hotspot.action_type === 'popup_window') {
-                    document.getElementById('modalProductTitle').textContent = hotspot.title || 'Details';
-                    document.getElementById('modalProductName').textContent = hotspot.title || '';
-                    document.getElementById('modalProductDesc').textContent = hotspot.description || '';
-                    document.getElementById('modalProductPrice').textContent = hotspot.price || '';
+                    resetProductModal();
 
-                    const productLink = document.getElementById('modalProductLink');
-                    productLink.href = hotspot.link || '#';
-                    productLink.style.display = hotspot.link ? '' : 'none';
+                    const title = String(hotspot.title || '').trim();
+                    const description = String(hotspot.description || '').trim();
+                    const price = String(hotspot.price || '').trim();
+                    const link = String(hotspot.link || '').trim();
 
-                    const thumbWrapper = document.getElementById('modalProductThumbWrapper');
-                    const thumb = document.getElementById('modalProductThumb');
+                    modalProductTitleEl.textContent = title || 'Product Details';
+                    modalProductNameEl.textContent = title || 'Catalog Product';
+                    modalProductDescEl.textContent = description || 'Product details will appear here when available.';
+
+                    if (price) {
+                        modalProductPriceEl.textContent = price;
+                        modalProductPriceRowEl.classList.remove('d-none');
+                    }
+
                     if (hotspot.thumbnail_path) {
-                        thumb.src = mediaUrl(hotspot.id, 'thumbnail');
-                        thumbWrapper.style.display = '';
-                    } else {
-                        thumbWrapper.style.display = 'none';
+                        modalProductThumbEl.src = mediaUrl(hotspot.id, 'thumbnail');
+                        modalProductThumbEl.alt = title || 'Product thumbnail';
+                        modalProductThumbWrapperEl.classList.remove('d-none');
+                        modalProductInfoColumnEl.classList.remove('col-lg-12');
+                        modalProductInfoColumnEl.classList.add('col-lg-8');
+                    }
+
+                    if (link) {
+                        modalProductLinkEl.href = link;
+                        modalProductLinkEl.classList.remove('d-none');
                     }
 
                     showModal('modalProduct');

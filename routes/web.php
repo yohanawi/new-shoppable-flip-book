@@ -204,6 +204,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/share-preview', [CatalogPdfSharePreviewController::class, 'index'])->name('share-preview.index');
         Route::post('/', [CatalogPdfController::class, 'store'])->name('store');
         Route::get('/{catalogPdf}', [CatalogPdfController::class, 'show'])->name('show');
+        Route::patch('/{catalogPdf}', [CatalogPdfController::class, 'update'])->name('update');
         Route::get('/{catalogPdf}/share-preview', [CatalogPdfSharePreviewController::class, 'edit'])->name('share-preview.edit');
         Route::post('/{catalogPdf}/share-preview', [CatalogPdfSharePreviewController::class, 'update'])->name('share-preview.update');
         Route::post('/{catalogPdf}/workflow', [CatalogPdfController::class, 'selectWorkflow'])->name('workflow.select');

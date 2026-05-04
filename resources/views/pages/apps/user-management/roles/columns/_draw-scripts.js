@@ -4,9 +4,14 @@ KTMenu.init();
 // Add click event listener to delete buttons
 document.querySelectorAll('[data-kt-action="delete_row"]').forEach(function (element) {
     element.addEventListener('click', function () {
-        if (confirm('Are you sure you want to remove?')) {
-            Livewire.dispatch('delete_user', [this.getAttribute('data-kt-user-id')]);
-        }
+        window.showDeleteConfirmation({
+            title: 'Delete User?',
+            text: 'This action is permanent and cannot be undone.',
+        }).then((confirmed) => {
+            if (confirmed) {
+                Livewire.dispatch('delete_user', [this.getAttribute('data-kt-user-id')]);
+            }
+        });
     });
 });
 

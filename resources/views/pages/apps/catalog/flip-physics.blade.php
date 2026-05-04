@@ -4,17 +4,13 @@
         Flip Physics
     @endsection
 
-    <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center mb-5">
-        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-light border">
+    <div class="d-flex flex-wrap justify-content-end gap-6 align-items-center mb-5">
+        <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-dark border">
             <i class="ki-outline ki-arrow-left fs-2"></i> Back
         </a>
-        <div class="d-flex flex-wrap gap-3">
-            <a href="{{ route('catalog.pdfs.flip-physics.preview', $pdf) }}" class="btn btn-light-primary"
-                target="_blank">Preview</a>
-            <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-success">
-                Download PDF
-            </a>
-        </div>
+        <a href="{{ route('catalog.pdfs.flip-physics.preview', $pdf) }}" class="btn btn-light-primary" target="_blank">
+            <i class="ki-outline ki-eye fs-2 me-2"></i> Preview
+        </a>
     </div>
 
 
@@ -273,6 +269,26 @@
                 let renderTimer = null;
                 let keyboardBound = false;
                 let isApplyingPreset = false;
+                let initialFormState = '';
+
+                function serializeFormState() {
+                    return JSON.stringify({
+                        preset: presetInput.value || '',
+                        duration_ms: durationInput.value || '',
+                        elevation: elevationInput.value || '',
+                        display_mode: displayModeInput.value || '',
+                        render_scale_percent: renderScaleInput.value || '',
+                        gradients: gradientsInput.checked,
+                        acceleration: accelerationInput.checked,
+                    });
+                }
+
+                const unsavedChangesGuard = typeof window.createUnsavedChangesGuard === 'function' ?
+                    window.createUnsavedChangesGuard({
+                        isDirty: function() {
+                            return initialFormState !== '' && serializeFormState() !== initialFormState;
+                        }
+                    }) : null;
 
                 if (window.pdfjsLib) {
                     window.pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -554,6 +570,10 @@
                     });
                 });
 
+                form.addEventListener('submit', () => {
+                    unsavedChangesGuard?.allowNextNavigation();
+                });
+
                 window.addEventListener('resize', () => scheduleRender(120));
 
                 // Fullscreen functionality - opens in new tab
@@ -596,6 +616,8 @@
                 } else {
                     elevationValue.textContent = elevationInput.value;
                 }
+
+                initialFormState = serializeFormState();
 
                 renderAll();
             })();

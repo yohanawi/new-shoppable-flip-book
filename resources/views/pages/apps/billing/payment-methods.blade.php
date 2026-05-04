@@ -118,7 +118,9 @@
                                     @endif
 
                                     <form method="POST"
-                                        action="{{ route('billing.payment-methods.destroy', $paymentMethod->id) }}">
+                                        action="{{ route('billing.payment-methods.destroy', $paymentMethod->id) }}"
+                                        data-delete-swal-title="Delete payment method?"
+                                        data-delete-swal-text="This action is permanent and cannot be undone.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

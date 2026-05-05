@@ -22,7 +22,7 @@
     </div>
     <div class="separator my-2"></div>
     <div class="menu-item px-5">
-        <a href="{{ route('account.profile') }}" class="menu-link px-5">My Profile</a>
+        <a href="{{ route('account.settings') }}" class="menu-link px-5">My Profile</a>
     </div>
 
     <div class="separator my-2"></div>

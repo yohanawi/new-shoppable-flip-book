@@ -29,7 +29,7 @@
         }
 
         $chartWidth = 640;
-        $chartHeight = 250;
+        $chartHeight = 120;
         $leftPadding = 18;
         $rightPadding = 18;
         $topPadding = 18;

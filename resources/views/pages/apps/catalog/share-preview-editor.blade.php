@@ -388,16 +388,28 @@
                                 <label class="form-label fw-bold text-gray-900">Logo</label>
                                 <input type="file" class="form-control form-control-solid" name="logo"
                                     id="logoInput" accept="image/*">
-                                <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
+                                <input type="hidden" name="remove_logo" value="0" id="removeLogo"
+                                    data-has-current-logo="{{ $shareAppearance['logoUrl'] ? '1' : '0' }}">
+                                <div class="d-flex flex-wrap align-items-center gap-3 mt-3" id="currentLogoActions"
+                                    @if (!$shareAppearance['logoUrl']) style="display: none;" @endif>
                                     @if ($shareAppearance['logoUrl'])
                                         <a href="{{ $shareAppearance['logoUrl'] }}" class="btn btn-sm btn-light"
                                             target="_blank" rel="noopener">View current logo</a>
                                     @endif
-                                    <label class="form-check form-check-custom form-check-solid">
-                                        <input class="form-check-input" type="checkbox" name="remove_logo"
-                                            value="1" id="removeLogo">
-                                        <span class="form-check-label text-gray-700">Remove current logo</span>
-                                    </label>
+                                    <button type="button"
+                                        class="btn btn-sm btn-icon btn-light-danger {{ $shareAppearance['logoUrl'] ? '' : 'd-none' }}"
+                                        id="btnRemoveCurrentLogo" aria-label="Remove current logo"
+                                        title="Remove current logo">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <div class="d-none flex-wrap align-items-center gap-3 mt-3"
+                                    id="currentLogoRemovedState">
+                                    <span class="text-muted fs-7 fw-semibold">Current logo will be removed on
+                                        save.</span>
+                                    <button type="button" class="btn btn-sm btn-light" id="btnRestoreCurrentLogo">
+                                        Undo
+                                    </button>
                                 </div>
                                 <div class="text-muted fs-7 mt-2">Transparent PNG or SVG works best.</div>
                             </div>
@@ -531,6 +543,10 @@
                 const removeBackgroundImageEl = document.getElementById('removeBackgroundImage');
                 const removeBackgroundVideoEl = document.getElementById('removeBackgroundVideo');
                 const removeLogoEl = document.getElementById('removeLogo');
+                const currentLogoActionsEl = document.getElementById('currentLogoActions');
+                const currentLogoRemovedStateEl = document.getElementById('currentLogoRemovedState');
+                const removeCurrentLogoButtonEl = document.getElementById('btnRemoveCurrentLogo');
+                const restoreCurrentLogoButtonEl = document.getElementById('btnRestoreCurrentLogo');
                 const logoTitleInputEl = document.getElementById('logoTitleInput');
                 const logoPositionXInputEl = document.getElementById('logoPositionXInput');
                 const logoPositionYInputEl = document.getElementById('logoPositionYInput');
@@ -589,6 +605,34 @@
                     logoWidthValueEl.textContent = logoWidthInputEl.value + 'px';
                 }
 
+                function hasCurrentLogoAsset() {
+                    return removeLogoEl?.dataset.hasCurrentLogo === '1';
+                }
+
+                function isCurrentLogoRemoved() {
+                    return removeLogoEl?.value === '1';
+                }
+
+                function setCurrentLogoRemovedState(removed) {
+                    if (!removeLogoEl) {
+                        return;
+                    }
+
+                    removeCurrentLogoButtonEl?.classList.toggle('d-none', !hasCurrentLogoAsset());
+                    removeLogoEl.value = removed ? '1' : '0';
+
+                    if (!hasCurrentLogoAsset()) {
+                        currentLogoActionsEl?.style.setProperty('display', 'none');
+                        currentLogoRemovedStateEl?.classList.add('d-none');
+                        currentLogoRemovedStateEl?.classList.remove('d-flex');
+                        return;
+                    }
+
+                    currentLogoActionsEl?.style.setProperty('display', removed ? 'none' : '');
+                    currentLogoRemovedStateEl?.classList.toggle('d-none', !removed);
+                    currentLogoRemovedStateEl?.classList.toggle('d-flex', removed);
+                }
+
                 function updatePreview() {
                     const type = selectedBackgroundType();
                     const backgroundColor = colorPickerEl.value || '#0F172A';
@@ -597,7 +641,7 @@
                         initialAppearance.backgroundImageUrl);
                     const videoUrl = removeBackgroundVideoEl.checked ? null : previewUrl('backgroundVideo',
                         initialAppearance.backgroundVideoUrl);
-                    const logoUrl = removeLogoEl.checked ? null : previewUrl('logo', initialAppearance.logoUrl);
+                    const logoUrl = isCurrentLogoRemoved() ? null : previewUrl('logo', initialAppearance.logoUrl);
                     const title = logoTitleInputEl.value.trim();
 
                     stage.style.setProperty('--studio-bg', backgroundColor);
@@ -650,6 +694,10 @@
                         return;
                     }
 
+                    if (key === 'logo') {
+                        setCurrentLogoRemovedState(false);
+                    }
+
                     previewUrls[key] = URL.createObjectURL(file);
                     updatePreview();
                 }
@@ -692,8 +740,16 @@
                 backgroundVideoInputEl.addEventListener('change', () => readPreviewFile(backgroundVideoInputEl,
                     'backgroundVideo'));
                 logoInputEl.addEventListener('change', () => readPreviewFile(logoInputEl, 'logo'));
+                removeCurrentLogoButtonEl?.addEventListener('click', () => {
+                    setCurrentLogoRemovedState(true);
+                    updatePreview();
+                });
+                restoreCurrentLogoButtonEl?.addEventListener('click', () => {
+                    setCurrentLogoRemovedState(false);
+                    updatePreview();
+                });
 
-                [removeBackgroundImageEl, removeBackgroundVideoEl, removeLogoEl, toolbarVisibleInputEl, logoTitleInputEl,
+                [removeBackgroundImageEl, removeBackgroundVideoEl, toolbarVisibleInputEl, logoTitleInputEl,
                     logoPositionXInputEl,
                     logoPositionYInputEl, logoWidthInputEl
                 ].forEach((element) => {
@@ -709,6 +765,7 @@
 
                 syncBackgroundPanels();
                 syncRangeLabels();
+                setCurrentLogoRemovedState(isCurrentLogoRemoved());
                 updatePreview();
 
                 window.copyToClipboard = function(text) {

@@ -8,7 +8,7 @@
         {{ Breadcrumbs::render('catalog.pdfs.slicer.edit', $pdf) }}
     @endsection
 
-    <div class="d-flex flex-wrap justify-content-end align-items-center mb-5 gap-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-5">
         <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-dark border">
             <i class="ki-outline ki-arrow-left fs-2"></i> Back
         </a>
@@ -30,8 +30,8 @@
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header">
-                    <div class="card-title d-flex align-items-center gap-3 flex-wrap justify-content-between">
-                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="card-title d-flex align-items-center gap-4 flex-wrap justify-content-between w-100">
+                        <div class="d-flex align-items-center gap-3 flex-wrap justify-content-start">
                             <span class="text-muted fw-semibold">Page</span>
                             <button type="button" class="btn btn-sm btn-light" id="btnPagePrev">
                                 <i class="bi bi-chevron-left"></i> Previous
@@ -51,20 +51,19 @@
                             </select>
                         </div>
 
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-
-                            <span class="text-muted fw-semibold">Tool</span>
-                            <button type="button" class="btn btn-sm btn-light" data-tool="select"
-                                id="toolSelect">Select</button>
-                            <button type="button" class="btn btn-sm btn-light" data-tool="rectangle"
-                                id="toolRect">Rectangle</button>
-                            {{-- <button type="button" class="btn btn-sm btn-light" data-tool="polygon"
+                        <div class="d-flex align-items-center gap-3 flex-wrap justify-content-lg-end ms-lg-auto">
+                            <div class="d-flex align-items-center gap-2 flex-wrap" id="toolBar">
+                                <span class="text-muted fw-semibold">Tool</span>
+                                <button type="button" class="btn btn-sm btn-light" data-tool="select"
+                                    id="toolSelect">Select</button>
+                                <button type="button" class="btn btn-sm btn-light" data-tool="rectangle"
+                                    id="toolRect">Rectangle</button>
+                                {{-- <button type="button" class="btn btn-sm btn-light" data-tool="polygon"
                                 id="toolPoly">Polygon</button>
                             <button type="button" class="btn btn-sm btn-light" data-tool="free"
                                 id="toolFree">Free</button> --}}
-                            <div class="vr"></div>
-
-                            <div class="d-none align-items-center gap-2" id="draftActionBar">
+                            </div>
+                            <div class="d-none align-items-center gap-2 flex-wrap" id="draftActionBar">
                                 <span class="text-muted fw-semibold">Draft</span>
                                 <button type="button" class="btn btn-sm btn-light-danger" id="btnDraftCancel">
                                     Cancel
@@ -72,7 +71,6 @@
                                 <button type="button" class="btn btn-sm btn-primary" id="btnDraftSave">
                                     Save
                                 </button>
-                                <div class="vr"></div>
                             </div>
                             {{-- <button type="button" class="btn btn-sm btn-light" id="btnClear">Clear Selection</button>
                             <button type="button" class="btn btn-sm btn-light" id="btnDeleteSelected">
@@ -131,9 +129,6 @@
                 <div class="card-header">
                     <div class="card-title d-flex justify-content-between align-items-center w-100 gap-3">
                         <span>Hotspots on Page</span>
-                        <button type="button" class="btn btn-sm btn-light-primary" id="btnOpenHotspotModal">
-                            New Hotspot
-                        </button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -268,7 +263,7 @@
                     </form>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light" id="btnNew">New</button>
+                    <button type="button" class="btn btn-light" id="btnNew">Reset</button>
                     <button type="button" class="btn btn-light-danger d-none" id="btnDeleteHotspot">Delete</button>
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
                     <button type="submit" form="hotspotForm" class="btn btn-primary" id="btnSave">Save
@@ -306,6 +301,7 @@
                 const hotspotModalTitleEl = document.getElementById('hotspotModalTitle');
                 const openHotspotModalButton = document.getElementById('btnOpenHotspotModal');
                 const hotspotModal = hotspotModalEl ? new bootstrap.Modal(hotspotModalEl) : null;
+                const toolBar = document.getElementById('toolBar');
                 const draftActionBar = document.getElementById('draftActionBar');
                 const draftCancelButton = document.getElementById('btnDraftCancel');
                 const draftSaveButton = document.getElementById('btnDraftSave');
@@ -347,6 +343,9 @@
                 const neutralHotspotSurfaceEdgeColor = 'rgba(148, 163, 184, 0.22)';
                 const neutralHotspotShadowColor = 'rgba(148, 163, 184, 0.38)';
                 const neutralHotspotCastShadowColor = 'rgba(15, 23, 42, 0.12)';
+                const draftHotspotFillColor = 'rgba(59, 130, 246, 0.18)';
+                const draftHotspotStrokeColor = 'rgba(37, 99, 235, 0.95)';
+                const persistedHotspotStrokeColor = 'rgba(148, 163, 184, 0.55)';
                 const embossedHotspotShadow = {
 
                     blur: 0,
@@ -466,6 +465,7 @@
                     const shouldShow = hasDraft && draftConfirmationRequired;
                     draftActionBar.classList.toggle('d-none', !shouldShow);
                     draftActionBar.classList.toggle('d-flex', shouldShow);
+                    toolBar?.classList.toggle('d-none', shouldShow);
                 }
 
                 function setPendingDraft(obj, requiresConfirmation = true) {
@@ -564,15 +564,21 @@
 
                     const resolvedColor = resolveCssColor(color);
                     const hasColor = resolvedColor !== '';
-                    const fillColor = hasColor ? (colorWithAlpha(color, 0.10) || neutralHotspotFillColor) :
-                        neutralHotspotFillColor;
+                    const isDraft = isDraftHotspotObject(obj);
+                    const fillColor = hasColor ? (colorWithAlpha(color, isDraft ? 0.18 : 0.10) ||
+                            (isDraft ? draftHotspotFillColor : neutralHotspotFillColor)) :
+                        (isDraft ? draftHotspotFillColor : neutralHotspotFillColor);
                     const shadowColor = hasColor ? (colorWithAlpha(color, 0.24) || neutralHotspotShadowColor) :
                         neutralHotspotShadowColor;
+                    const strokeColor = hasColor ? (colorWithAlpha(color, isDraft ? 0.95 : 0.42) ||
+                            (isDraft ? draftHotspotStrokeColor : persistedHotspotStrokeColor)) :
+                        (isDraft ? draftHotspotStrokeColor : persistedHotspotStrokeColor);
 
                     obj.set({
                         fill: fillColor,
-                        stroke: transparentHotspotColor,
-                        strokeWidth: 0,
+                        stroke: strokeColor,
+                        strokeWidth: isDraft ? 2 : 1.25,
+                        strokeDashArray: isDraft ? [10, 6] : null,
                         shadow: {
                             ...embossedHotspotShadow,
                             color: shadowColor,

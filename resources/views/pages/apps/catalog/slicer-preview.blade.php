@@ -21,14 +21,18 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-sm btn-light-info" id="btnFullscreen">
+                {{-- <button type="button" class="btn btn-sm btn-light-info" id="btnFullscreen">
                     <i class="bi bi-fullscreen"></i> Fullscreen
-                </button>
+                </button> --}}
                 <button type="button" class="btn btn-sm btn-light-success" id="btnShare">
                     <i class="bi bi-share"></i> Share
                 </button>
+                <a class="btn btn-sm btn-light-primary fw-bold" href="{{ route('catalog.pdfs.download', $pdf) }}">
+                    <i class="bi bi-download me-1"></i>
+                    Download PDF
+                </a>
                 <a href="{{ route('catalog.pdfs.slicer.edit', $pdf) }}" class="btn btn-sm btn-light">
-                    <i class="bi bi-arrow-left"></i> Editor
+                    <i class="ki-outline ki-arrow-left fs-2"></i> Back to Editor
                 </a>
             </div>
         </div>
@@ -41,12 +45,6 @@
                     <i class="ki-outline ki-loading fs-6 me-1"></i>
                     Loading…
                 </div>
-            </div>
-            <div class="card-toolbar">
-                <a class="btn btn-sm btn-light-primary fw-bold" href="{{ route('catalog.pdfs.download', $pdf) }}">
-                    <i class="bi bi-download me-1"></i>
-                    Download PDF
-                </a>
             </div>
         </div>
 
@@ -229,7 +227,7 @@
                 }
 
                 const statusEl = document.getElementById('status');
-                const flipbookEl = document.getElementById('flipbook');
+                let flipbookEl = document.getElementById('flipbook');
                 const pageIndicatorEl = document.getElementById('pageIndicator');
                 const modalProductEl = document.getElementById('modalProduct');
                 const modalProductTitleEl = document.getElementById('modalProductTitle');
@@ -360,6 +358,10 @@
                 }
 
                 function updateFullscreenButton() {
+                    if (!fullscreenButton) {
+                        return;
+                    }
+
                     const icon = isStageFullscreen() ? 'bi-fullscreen-exit' : 'bi-fullscreen';
                     const label = isStageFullscreen() ? 'Exit Fullscreen' : 'Fullscreen';
                     fullscreenButton.innerHTML = `<i class="bi ${icon}"></i> ${label}`;
@@ -588,6 +590,18 @@
                     }
                 }
 
+                function resetFlipbookElement() {
+                    if (!flipbookEl?.parentNode) {
+                        return;
+                    }
+
+                    const nextFlipbookEl = document.createElement('div');
+                    nextFlipbookEl.id = 'flipbook';
+                    nextFlipbookEl.className = 'mx-auto';
+                    flipbookEl.parentNode.replaceChild(nextFlipbookEl, flipbookEl);
+                    flipbookEl = nextFlipbookEl;
+                }
+
                 function computeLayout(rawViewport) {
                     const stageStyles = window.getComputedStyle(flipbookStageEl);
                     const horizontalPadding = (parseFloat(stageStyles.paddingLeft) || 0) + (parseFloat(stageStyles
@@ -729,10 +743,11 @@
                 function destroyTurnIfExists() {
                     try {
                         if (hasActiveFlipbook()) {
-                            $('#flipbook').turn('destroy');
+                            $('#flipbook').turn('stop');
                         }
                     } catch (error) {}
 
+                    resetFlipbookElement();
                     $flipbook = null;
                     setNavigationEnabled(false);
                 }
@@ -1065,7 +1080,7 @@
                     }
                 });
 
-                fullscreenButton.addEventListener('click', toggleFullscreen);
+                fullscreenButton?.addEventListener('click', toggleFullscreen);
 
                 if (!keyboardBound) {
                     window.addEventListener('keydown', function(event) {

@@ -10,8 +10,8 @@
 
     <div class="d-flex flex-wrap flex-stack mb-6">
         <div class="d-flex gap-2 ms-auto">
-            <a href="{{ route('catalog.pdfs.flip-physics.edit', $pdf) }}" class="btn btn-light btn-active-light-primary">
-                Back to Settings
+            <a href="{{ route('catalog.pdfs.flip-physics.edit', $pdf) }}" class="btn btn-dark btn-active-light-primary">
+                <i class="ki-outline ki-arrow-left fs-2"></i> Back to Settings
             </a>
         </div>
     </div>
@@ -31,12 +31,7 @@
                     <button type="button" class="btn btn-light-info" id="btnFullscreen">
                         <i class="bi bi-fullscreen"></i> Fullscreen
                     </button>
-                    <button type="button" class="btn btn-light-success" id="btnShare">
-                        <i class="bi bi-share"></i> Share
-                    </button>
-                    <a class="btn btn-light-primary" href="{{ route('catalog.pdfs.download', $pdf) }}">
-                        <i class="bi bi-download"></i> Download
-                    </a>
+
                 </div>
             </div>
 
@@ -90,7 +85,7 @@
                 const settings = @json($viewerSettings);
 
                 const statusEl = document.getElementById('status');
-                const flipbookEl = document.getElementById('flipbook');
+                let flipbookEl = document.getElementById('flipbook');
                 const pageInfoEl = document.getElementById('pageInfo');
                 const previewCardEl = document.getElementById('previewCard');
                 const previewCardBodyEl = document.getElementById('previewCardBody');
@@ -244,14 +239,27 @@
                     }
                 }
 
+                function resetFlipbookElement() {
+                    if (!flipbookEl?.parentNode) {
+                        return;
+                    }
+
+                    const nextFlipbookEl = document.createElement('div');
+                    nextFlipbookEl.id = 'flipbook';
+                    nextFlipbookEl.className = 'mx-auto';
+                    flipbookEl.parentNode.replaceChild(nextFlipbookEl, flipbookEl);
+                    flipbookEl = nextFlipbookEl;
+                }
+
                 function destroyTurnIfExists() {
                     try {
                         const $fb = $('#flipbook');
                         if (hasActiveFlipbook()) {
-                            $fb.turn('destroy');
+                            $fb.turn('stop');
                         }
                     } catch (e) {}
 
+                    resetFlipbookElement();
                     $flipbook = null;
                     setNavigationEnabled(false);
                 }
@@ -402,7 +410,7 @@
                 }
 
                 // Share functionality
-                shareButtonEl.addEventListener('click', function() {
+                shareButtonEl?.addEventListener('click', function() {
                     const shareModal = new bootstrap.Modal(shareModalEl);
                     shareModal.show();
                 });

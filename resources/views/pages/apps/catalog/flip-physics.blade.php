@@ -4,12 +4,9 @@
         Flip Physics
     @endsection
 
-    <div class="d-flex flex-wrap justify-content-end gap-6 align-items-center mb-5">
+    <div class="d-flex flex-wrap justify-content-between gap-6 align-items-center mb-5">
         <a href="{{ route('catalog.pdfs.show', $pdf) }}" class="btn btn-dark border">
             <i class="ki-outline ki-arrow-left fs-2"></i> Back
-        </a>
-        <a href="{{ route('catalog.pdfs.flip-physics.preview', $pdf) }}" class="btn btn-light-primary" target="_blank">
-            <i class="ki-outline ki-eye fs-2 me-2"></i> Preview
         </a>
     </div>
 
@@ -51,11 +48,11 @@
                         <div class="d-flex flex-wrap gap-2">
                             <button type="button" class="btn btn-light-info btn-sm" id="btnFullscreen"
                                 title="Open in new tab">
-                                <i class="bi bi-fullscreen"></i> Fullscreen
+                                <i class="bi bi-fullscreen"></i> Preview
                             </button>
-                            <button type="button" class="btn btn-light-success btn-sm" id="btnShare" title="Share">
+                            {{-- <button type="button" class="btn btn-light-success btn-sm" id="btnShare" title="Share">
                                 <i class="bi bi-share"></i> Share
-                            </button>
+                            </button> --}}
                             <button type="button" class="btn btn-light" id="btnPrev">Previous</button>
                             <button type="button" class="btn btn-light" id="btnNext">Next</button>
                         </div>
@@ -145,9 +142,8 @@
 
                         <div class="mb-6">
                             <label class="form-label required">Render Quality</label>
-                            <input type="number" min="80" max="200"
-                                class="form-control form-control-solid" name="render_scale_percent"
-                                id="render_scale_percent"
+                            <input type="number" min="80" max="200" class="form-control form-control-solid"
+                                name="render_scale_percent" id="render_scale_percent"
                                 value="{{ old('render_scale_percent', $setting->render_scale_percent) }}">
                             <div class="form-text text-muted">Higher looks sharper but renders slower.</div>
                             @error('render_scale_percent')
@@ -178,23 +174,7 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm mt-7">
-                <div class="card-header border-0 pt-7">
-                    <div class="card-title flex-column align-items-start">
-                        <h3 class="fw-bold text-gray-900 mb-1">Actions</h3>
-                        <div class="text-muted fs-7">Preview, share, or download the current PDF.</div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <a href="{{ route('catalog.pdfs.flip-physics.preview', $pdf) }}"
-                        class="btn btn-light-info w-100 mb-3" target="_blank">
-                        <i class="bi bi-fullscreen"></i> Open Preview (New Tab)
-                    </a>
-                    <a href="{{ route('catalog.pdfs.download', $pdf) }}" class="btn btn-light-primary w-100">
-                        <i class="bi bi-download"></i> Download PDF
-                    </a>
-                </div>
-            </div>
+
         </div>
     </div>
 
@@ -241,9 +221,10 @@
                 const hasOldPreset = @json(old('preset') !== null);
                 const statusEl = document.getElementById('status');
                 const flipbookStageEl = document.getElementById('flipbookStage');
-                const flipbookEl = document.getElementById('flipbook');
+                let flipbookEl = document.getElementById('flipbook');
                 const prevButton = document.getElementById('btnPrev');
                 const nextButton = document.getElementById('btnNext');
+                const shareButton = document.getElementById('btnShare');
 
                 const form = document.getElementById('flipPhysicsForm');
                 const presetInput = document.getElementById('preset');
@@ -368,7 +349,7 @@
 
                 function resolveBookLayout(rawViewport, settings) {
                     const stageWidth = Math.max(flipbookStageEl.clientWidth - 32, 280);
-                    const stageHeight = Math.max(flipbookStageEl.clientHeight - 32, 360);
+                    const stageHeight = Math.max(flipbookStageEl.clientHeight - 32, 500);
                     const maxSingleWidth = settings.display === 'double' ? stageWidth / 2 : stageWidth;
                     const layoutScale = Math.max(
                         Math.min(maxSingleWidth / rawViewport.width, stageHeight / rawViewport.height),
@@ -411,14 +392,26 @@
                     }
                 }
 
+                function resetFlipbookElement() {
+                    if (!flipbookEl?.parentNode) {
+                        return;
+                    }
+
+                    const nextFlipbookEl = document.createElement('div');
+                    nextFlipbookEl.id = 'flipbook';
+                    flipbookEl.parentNode.replaceChild(nextFlipbookEl, flipbookEl);
+                    flipbookEl = nextFlipbookEl;
+                }
+
                 function destroyTurnIfExists() {
                     try {
                         const $flipbook = $('#flipbook');
                         if ($flipbook.data('turn')) {
-                            $flipbook.turn('destroy');
+                            $flipbook.turn('stop');
                         }
                     } catch (e) {}
 
+                    resetFlipbookElement();
                     flipbookInstance = null;
                     setNavigationEnabled(false);
                 }
@@ -582,7 +575,7 @@
                 });
 
                 // Share functionality
-                document.getElementById('btnShare').addEventListener('click', function() {
+                shareButton?.addEventListener('click', function() {
                     const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
                     shareModal.show();
                 });

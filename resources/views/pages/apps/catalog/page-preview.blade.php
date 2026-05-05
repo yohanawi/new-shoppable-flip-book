@@ -10,7 +10,7 @@
 
     <div class="d-flex flex-wrap flex-stack mb-6">
         <div class="d-flex gap-2 ms-auto">
-            <a href="{{ route('catalog.pdfs.manage', $pdf) }}" class="btn btn-light border btn-active-light-primary">
+            <a href="{{ route('catalog.pdfs.manage', $pdf) }}" class="btn btn-dark border btn-active-light-primary">
                 <i class="bi bi-arrow-left"></i> Back to Page Management
             </a>
         </div>
@@ -88,7 +88,7 @@
             }
 
             #flipbookStage {
-                min-height: 60vh;
+                min-height: calc(100vh - 150px);
             }
 
             #previewCard:fullscreen,
@@ -155,7 +155,7 @@
                 let pages = @json($pages);
 
                 const statusEl = document.getElementById('status');
-                const flipbookEl = document.getElementById('flipbook');
+                let flipbookEl = document.getElementById('flipbook');
                 const pageInfoEl = document.getElementById('pageInfo');
                 const previewCardEl = document.getElementById('previewCard');
                 const previewCardBodyEl = document.getElementById('previewCardBody');
@@ -302,6 +302,17 @@
                     }
                 }
 
+                function resetFlipbookElement() {
+                    if (!flipbookEl?.parentNode) {
+                        return;
+                    }
+
+                    const nextFlipbookEl = document.createElement('div');
+                    nextFlipbookEl.id = 'flipbook';
+                    flipbookEl.parentNode.replaceChild(nextFlipbookEl, flipbookEl);
+                    flipbookEl = nextFlipbookEl;
+                }
+
                 function destroyTurnIfExists() {
                     window.clearTimeout(backgroundRenderTimer);
                     inFlightRenders.clear();
@@ -310,13 +321,14 @@
                         if (window.jQuery) {
                             const $currentFlipbook = $('#flipbook');
                             if (hasActiveFlipbook($currentFlipbook)) {
-                                $currentFlipbook.turn('destroy');
+                                $currentFlipbook.turn('stop');
                             }
                         }
                     } catch (error) {
                         console.error(error);
                     }
 
+                    resetFlipbookElement();
                     $flipbook = null;
                     pageShells = [];
                     pageInfoEl.textContent = '';
@@ -331,7 +343,7 @@
                         .paddingBottom || '0');
 
                     const availableWidth = Math.max(stageRect.width - horizontalPadding, 280);
-                    const availableHeight = Math.max(stageRect.height - verticalPadding, 360);
+                    const availableHeight = Math.max(stageRect.height - verticalPadding, 600);
                     const display = availableWidth < 992 ? 'single' : 'double';
                     const maxSingleWidth = display === 'double' ? availableWidth / 2 : availableWidth;
                     const fitScale = Math.max(

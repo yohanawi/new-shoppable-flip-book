@@ -203,6 +203,11 @@
                             Copy share link
                         </button>
 
+                        <button type="button" class="btn btn-light-info"
+                            onclick="copyEmbedCode('{{ route('catalog.pdfs.share', $pdf) }}', '{{ addslashes($pdf->title) }}')">
+                            Embed Link
+                        </button>
+
                         <button type="button" class="btn btn-light"
                             onclick="copyToClipboard('{{ route('catalog.pdfs.show', $pdf) }}')">
                             Copy manage link
@@ -216,14 +221,43 @@
 
     @push('scripts')
         <script>
-            window.copyToClipboard = function(text) {
+            function notifyClipboardSuccess(message) {
+                if (window.toastr) {
+                    toastr.success(message);
+                    return;
+                }
+
+                alert(message);
+            }
+
+            function escapeHtmlAttribute(value) {
+                return String(value || 'Embedded PDF')
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
+            window.copyToClipboard = function(text, successMessage = 'Link copied to clipboard.') {
                 navigator.clipboard.writeText(text).then(() => {
+                    notifyClipboardSuccess(successMessage);
+                }).catch((error) => {
+                    console.error(error);
+                });
+            };
+
+            window.copyEmbedCode = function(url, title) {
+                const safeTitle = escapeHtmlAttribute(title);
+                const embedCode =
+                    `<iframe src="${url}" title="${safeTitle}" loading="lazy" allowfullscreen style="width:100%; min-height:720px; border:0;"></iframe>`;
+
+                navigator.clipboard.writeText(embedCode).then(() => {
                     if (window.toastr) {
-                        toastr.success('Link copied to clipboard.');
+                        toastr.success('Embed code copied to clipboard.');
                         return;
                     }
 
-                    alert('Link copied to clipboard.');
+                    alert('Embed code copied to clipboard.');
                 }).catch((error) => {
                     console.error(error);
                 });
